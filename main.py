@@ -15,6 +15,8 @@ Architecture:
 import os
 import io
 import re
+import json
+import base64
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -26,6 +28,9 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from bson import ObjectId
+import google.generativeai as genai
+from google.generativeai.types import content_types
+from PIL import Image
 
 
 
@@ -96,74 +101,193 @@ async def health_check():
 
 
 # ---------------------------------------------------------------------------
-# Receipt Upload Endpoint
+# Gemini VLM Receipt Extraction Engine
 # ---------------------------------------------------------------------------
-class ReceiptData(BaseModel):
-    store: str
-    items: list[dict]
-    taxes: dict | None = None
-    subtotal: float | None = None
-    total: float | None = None
 
+# Configure the Gemini SDK
+_gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+if _gemini_api_key:
+    genai.configure(api_key=_gemini_api_key)
+    logger.info("Gemini API key loaded.")
+else:
+    logger.warning("GEMINI_API_KEY not set — receipt scanning will fail.")
+
+# Strict JSON schema for constrained decoding (OpenAPI-subset)
+RECEIPT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "storeName": {
+            "type": "string",
+            "description": "The registered name of the retail store. No address."
+        },
+        "items": {
+            "type": "array",
+            "description": "List of grocery line items ONLY. Never include taxes, subtotals, discounts, or rounding here.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Clean product name. Strip all weights, sizes, package types."},
+                    "quantity": {"type": "number", "description": "Numerical quantity. Default 1 if not stated."},
+                    "unit": {"type": "string", "description": "Unit: kg, g, ml, L, unit, pcs, lbs, packet."},
+                    "total_price": {"type": "number", "description": "Final billed price for this line item."}
+                },
+                "required": ["name", "quantity", "unit", "total_price"]
+            }
+        },
+        "taxes": {
+            "type": "object",
+            "description": "Statutory tax data only. Never put taxes in the items array.",
+            "properties": {
+                "CGST": {"type": "number", "description": "Central GST amount. 0 if absent."},
+                "SGST": {"type": "number", "description": "State GST amount. 0 if absent."},
+                "IGST": {"type": "number", "description": "Integrated GST amount. 0 if absent."}
+            },
+            "required": ["CGST", "SGST", "IGST"]
+        },
+        "subtotal": {"type": "number", "description": "Pre-tax total of all grocery items."},
+        "grandTotal": {"type": "number", "description": "Final amount paid including all taxes."}
+    },
+    "required": ["storeName", "items", "taxes", "subtotal", "grandTotal"]
+}
+
+GEMINI_META_PROMPT = """You are an expert data extraction agent specializing in Indian retail and grocery receipts.
+Your task: deeply analyze the provided receipt image and extract transactional data with perfect accuracy.
+
+CRITICAL EXTRACTION PROTOCOLS:
+1. ENTITY DECOMPOSITION: Deconstruct complex product strings.
+   - 'Tata Salt 1kg' → name='Tata Salt', quantity=1, unit='kg'
+   - 'Amul Milk 500ml' → name='Amul Milk', quantity=500, unit='ml'
+   - Strip ALL weights, volumes, sizes, container types from the 'name' field.
+2. STRICT TAX ISOLATION: CGST, SGST, IGST, VAT, Cess, and 'Rounding Off' must NEVER
+   appear in the 'items' array. Place them exclusively in the 'taxes' object.
+   If a specific tax is absent, set its value to 0.
+3. HALLUCINATION PREVENTION: Ignore creases, folds, smudges, barcodes, logos,
+   and watermarks. Do NOT invent data. Extract only clear transactional text.
+4. INFERENTIAL DEFAULTS: If a grocery product has no explicit quantity, default
+   quantity=1 and unit='unit'.
+5. PRICE PRECISION: If a receipt shows both unit price and total price on the same
+   line, use the TOTAL price for 'total_price'.
+
+Return the data strictly conforming to the requested JSON schema."""
+
+
+async def extract_receipt_with_gemini(image_bytes: bytes, mime_type: str) -> dict:
+    """Call Gemini 1.5 Flash with constrained JSON schema to extract receipt data."""
+    model = genai.GenerativeModel(
+        model_name=os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+        generation_config=genai.types.GenerationConfig(
+            response_mime_type="application/json",
+            response_schema=RECEIPT_SCHEMA,
+            temperature=0.1,
+            top_p=0.8,
+            top_k=10,
+        )
+    )
+
+    # Resize image if needed (max 1600px longest edge) to reduce token cost
+    img = Image.open(io.BytesIO(image_bytes))
+    max_edge = 1600
+    if max(img.width, img.height) > max_edge:
+        ratio = max_edge / max(img.width, img.height)
+        img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=90)
+        image_bytes = buf.getvalue()
+        mime_type = "image/jpeg"
+
+    # Build the inline image part for the Gemini API
+    image_part = {
+        "inline_data": {
+            "mime_type": mime_type,
+            "data": base64.b64encode(image_bytes).decode("utf-8")
+        }
+    }
+
+    response = await model.generate_content_async(
+        contents=[GEMINI_META_PROMPT, image_part]
+    )
+    return json.loads(response.text)
+
+
+# ---------------------------------------------------------------------------
+# Receipt Upload Endpoint  (image → Gemini → MongoDB)
+# ---------------------------------------------------------------------------
 @app.post("/api/receipts/upload", tags=["Receipts"])
-async def upload_receipt(data: ReceiptData):
+async def upload_receipt(file: UploadFile = File(...)):
     """
-    Receive pre-parsed OCR receipt data from the frontend.
-    The frontend (Tesseract.js) handles the heavy OCR work to save CPU.
+    Accept a raw receipt image, extract structured data via Gemini 1.5 Flash
+    (strict JSON schema / constrained decoding), and persist to MongoDB.
     """
+    if not _gemini_api_key:
+        raise HTTPException(503, "Gemini API key is not configured on the server.")
+
     now = datetime.utcnow().isoformat()
 
-    try:
-        store_name = data.store
-        total_amount = data.total or 0.0
-        items_to_add = data.items
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(500, f"Failed to process receipt data: {str(e)}")
+    # 1. Read uploaded bytes
+    image_bytes = await file.read()
+    mime_type = file.content_type or "image/jpeg"
 
-    # 1. Add Receipt
+    # 2. Extract with Gemini VLM
+    try:
+        extracted = await extract_receipt_with_gemini(image_bytes, mime_type)
+        logger.info(f"Gemini extracted {len(extracted.get('items', []))} items from receipt.")
+    except Exception as e:
+        logger.error(f"Gemini extraction failed: {e}")
+        raise HTTPException(500, f"AI extraction failed: {str(e)}")
+
+    store_name  = extracted.get("storeName", "Unknown Store")
+    grand_total = float(extracted.get("grandTotal") or 0.0)
+    subtotal    = float(extracted.get("subtotal") or 0.0)
+    taxes       = extracted.get("taxes", {"CGST": 0, "SGST": 0, "IGST": 0})
+    items       = extracted.get("items", [])
+
+    # 3. Persist receipt document
     await db_service.insert_one("receipts", {
         "store": store_name,
         "date": now,
-        "total": total_amount,
-        "item_count": len(items_to_add),
+        "total": grand_total,
+        "subtotal": subtotal,
+        "taxes": taxes,
+        "item_count": len(items),
         "status": "processed",
-        "ocr_text": "Extracted with Advanced OCR Agent"
+        "engine": "gemini-vision"
     })
-    
-    # 2. Add Financial Ledger Entry
-    if total_amount > 0:
+
+    # 4. Persist financial ledger entry
+    if grand_total > 0:
         await db_service.insert_one("financial_ledger", {
             "date": now,
-            "amount": total_amount,
+            "amount": grand_total,
             "category": "Groceries",
             "description": f"Receipt from {store_name}",
             "type": "expense"
         })
-    
-    # 3. Add Inventory Items
-    for item in items_to_add:
-        doc = {
-            "name": item["name"],
-            "category": item["category"],
-            "quantity": item["quantity"],
-            "unit": item["unit"],
-            "cost_per_unit": item["cost_per_unit"],
+
+    # 5. Persist inventory items
+    for item in items:
+        qty   = float(item.get("quantity") or 1)
+        price = float(item.get("total_price") or 0.0)
+        await db_service.insert_one("inventory", {
+            "name": str(item.get("name", "Unknown"))[:60],
+            "category": "Groceries",
+            "quantity": qty,
+            "unit": str(item.get("unit", "unit")),
+            "cost_per_unit": round(price / qty, 2) if qty > 0 else price,
             "store": store_name,
             "status": "fresh",
             "purchase_date": now,
             "created_at": now
-        }
-        await db_service.insert_one("inventory", doc)
+        })
 
     return {
         "status": "success",
-        "message": f"Processed via client-side OCR. Extracted {len(items_to_add)} items.",
+        "message": f"Gemini Vision extracted {len(items)} items from receipt.",
         "extracted_data": {
             "store": store_name,
-            "total": total_amount,
-            "items": len(items_to_add)
+            "subtotal": subtotal,
+            "taxes": taxes,
+            "grandTotal": grand_total,
+            "items": len(items)
         }
     }
 

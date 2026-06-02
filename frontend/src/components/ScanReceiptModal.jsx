@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { uploadReceiptData } from '../services/api';
-import { processReceiptFile } from '../services/ocrService';
+import { uploadReceiptImage } from '../services/api';
 import './ScanReceiptModal.css';
 
 export default function ScanReceiptModal({ onClose, onSuccess }) {
@@ -24,11 +23,8 @@ export default function ScanReceiptModal({ onClose, onSuccess }) {
     setLoading(true);
     setError(null);
     try {
-      // Client-side OCR using Tesseract Web Workers
-      const receiptData = await processReceiptFile(file);
-      
-      // Send parsed JSON data to backend
-      await uploadReceiptData(receiptData);
+      // Send raw image directly to backend — Gemini Vision handles all OCR
+      await uploadReceiptImage(file);
       
       setSuccess(true);
       setTimeout(() => {

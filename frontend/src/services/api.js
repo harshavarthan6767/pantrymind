@@ -68,10 +68,17 @@ export const consumeItem = (itemName, quantity = 1) => {
 /* -- Receipts ------------------------------------------------ */
 export const getReceipts = () => request('/api/receipts');
 
-export const uploadReceiptData = (receiptData) => {
+/**
+ * Send a raw receipt image file to the backend.
+ * Gemini 1.5 Flash handles OCR + structured extraction server-side.
+ */
+export const uploadReceiptImage = (imageFile) => {
+  const formData = new FormData();
+  formData.append('file', imageFile);
   return request('/api/receipts/upload', {
     method: 'POST',
-    body: JSON.stringify(receiptData),
+    body: formData,
+    // DO NOT set Content-Type — browser auto-sets multipart boundary
   });
 };
 
