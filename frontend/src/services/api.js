@@ -68,14 +68,10 @@ export const consumeItem = (itemName, quantity = 1) => {
 /* -- Receipts ------------------------------------------------ */
 export const getReceipts = () => request('/api/receipts');
 
-export const uploadReceipt = (file, documentType = 'receipt') => {
-  const form = new FormData();
-  form.append('file', file);
-  form.append('document_type', documentType);
+export const uploadReceiptData = (receiptData) => {
   return request('/api/receipts/upload', {
     method: 'POST',
-    headers: {},
-    body: form,
+    body: JSON.stringify(receiptData),
   });
 };
 

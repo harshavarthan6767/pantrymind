@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { uploadReceipt } from '../services/api';
+import { uploadReceiptData } from '../services/api';
+import { processReceiptFile } from '../services/ocrService';
 import './ScanReceiptModal.css';
 
 export default function ScanReceiptModal({ onClose, onSuccess }) {
@@ -23,13 +24,19 @@ export default function ScanReceiptModal({ onClose, onSuccess }) {
     setLoading(true);
     setError(null);
     try {
-      await uploadReceipt(file, 'receipt');
+      // Client-side OCR using Tesseract Web Workers
+      const receiptData = await processReceiptFile(file);
+      
+      // Send parsed JSON data to backend
+      await uploadReceiptData(receiptData);
+      
       setSuccess(true);
       setTimeout(() => {
         if (onSuccess) onSuccess();
         onClose();
       }, 2000);
     } catch (err) {
+      console.error(err);
       setError(err.message || 'Failed to scan receipt');
     } finally {
       setLoading(false);

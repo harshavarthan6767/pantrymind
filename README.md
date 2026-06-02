@@ -1,93 +1,78 @@
 # 🛒 PantryMind - AI Pantry Manager & Receipt Scanner
 
-PantryMind is an intelligent inventory management web application built with a modern React (Vite) frontend and a FastAPI backend. It features an advanced **Offline Receipt OCR Agent** that can scan grocery receipts and automatically extract items, prices, and quantities to keep your pantry inventory up to date!
-
-## ✨ Features
-- **Advanced Offline OCR:** Uses PaddleOCR and OpenCV to read messy receipts completely offline.
-- **AI Layout Parsing:** Intelligently figures out which prices belong to which items and calculates quantities.
-- **Pantry Inventory Tracking:** Add, remove, edit, and keep track of expiring items.
-- **Financial & Nutrition Analytics:** Track monthly grocery spending and basic item insights.
-- **Responsive Dashboard:** A beautiful, animated UI powered by React and TailwindCSS.
-
-## 🛠 Tech Stack
-- **Frontend:** React 18, Vite, TailwindCSS, Lucide Icons, Recharts
-- **Backend:** Python 3.10+, FastAPI, Uvicorn
-- **Database:** MongoDB (Motor Asyncio)
-- **AI/ML:** PaddleOCR, PaddlePaddle, OpenCV (Headless)
+PantryMind is an intelligent grocery inventory management application built to automate receipt scanning and tracking. It uses a modern **client-side OCR architecture** to parse physical receipts directly in the browser, completely eliminating the need for heavy server-side machine learning dependencies!
 
 ---
 
-## 🚀 Setup & Installation
+## 🏛 Architecture Overview
+
+The application is split into a **Vite + React Frontend** and a **FastAPI + MongoDB Backend**.
+
+### 1. The Lightweight Client-Side OCR Architecture
+Initially, the project used server-side Python libraries (PaddleOCR, OpenCV, ONNX) to process receipts. This was completely overhauled to a **Pure WebAssembly (WASM)** architecture for maximum scalability.
+
+- **HTML5 Canvas Preprocessing**: Instead of using Python's OpenCV, the frontend uses native `canvas.getContext('2d')` to instantly scale down high-resolution smartphone photos and apply `grayscale` and `contrast` filters before scanning. This prevents browser CPU freezing.
+- **Tesseract.js (Web Workers)**: The preprocessed image is passed to `Tesseract.js`, a WASM port of the famous OCR engine. By running in a background Web Worker thread, it extracts text asynchronously without interrupting the React UI animations.
+
+### 2. The "Bouncer & Chopper" Parsing Engine
+Raw OCR output from receipts is notoriously messy (often called "OCR garbage"). We implemented a highly resilient, subtractive JavaScript parsing loop in `frontend/src/services/ocrService.js`:
+
+- **The Bouncer**: Instantly rejects lines containing structural metadata (e.g., "SUBTOTAL", "TAX", "TOTAL").
+- **The Chopper**: Chops off any internal categorization metadata that might have been appended by other systems.
+- **The Junk Filter**: Evaluates the ratio of symbols (like `—`, `=`, `~`) to alphanumeric characters. If a line is heavily skewed towards symbols, it is classified as a "phantom line" (a crease or shadow hallucination) and silently dropped.
+- **Subtractive Price Extraction**: To defeat the "Double-Price Trap" (where receipts print Unit Price and Total Price on the same line), the parser globally extracts *all* decimals first, assigns the final one to the total, and then completely erases them from the string.
+- **Cleanup**: Weights, quantities, and trailing tax flags (`F` or `T`) are individually regex-matched and wiped out.
+- **Final Polish**: What remains is a pristine item name, completely stripped of all numbers, weights, and symbols.
+
+### 3. The Backend API
+The backend (`main.py`) acts as a fast, asynchronous persistence layer.
+- **Framework**: FastAPI with asynchronous endpoints.
+- **Database**: MongoDB (via `motor.motor_asyncio`), storing data in specific collections: `inventory`, `receipts`, `financial_ledger`, etc.
+- **Data Flow**: The frontend sends a clean JSON payload (`ReceiptData` Pydantic model) containing the extracted items and total. The backend iterates through the array, inserting items into the `inventory` collection and appending a transaction to the `financial_ledger`.
+
+---
+
+## 📂 Directory Structure
+
+### `/frontend` (React + Vite)
+- `src/components/`: Contains UI components like `Dashboard.jsx` (main view), `InventoryList.jsx`, and `ScanReceiptModal.jsx` (handles file upload UI).
+- `src/services/`: 
+  - `ocrService.js`: The heart of the client-side OCR. Handles Canvas preprocessing, Tesseract extraction, and the Chopper/Bouncer logic.
+  - `api.js`: Axios wrapper for communicating with the FastAPI backend.
+
+### `/` (Root Backend)
+- `main.py`: The FastAPI application. Defines Pydantic models (e.g., `InventoryItem`, `ReceiptData`) and contains all routing (`/api/inventory`, `/api/receipts/upload`).
+- `services/mongodb.py`: The asynchronous Motor client wrapper to handle generic CRUD operations across the various MongoDB collections.
+- `requirements.txt`: Python dependencies (FastAPI, Motor, Uvicorn, Pydantic).
+
+---
+
+## 🚀 Setup & Execution
 
 ### 1. Prerequisites
 - **Node.js** (v18+ recommended)
 - **Python** (v3.10+ recommended)
 - **MongoDB Atlas** account (or local MongoDB server)
 
-### 2. Clone the Repository
-```bash
-git clone https://github.com/your-username/pantrymind.git
-cd pantrymind
-```
-
-### 3. Environment Variables
+### 2. Environment Variables
 Create a `.env` file in the root of the project:
 ```env
-# MongoDB Connection String (Replace with your actual cluster URI)
 MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/?retryWrites=true&w=majority
 ```
 
-### 4. Backend Setup
-The backend handles the API and the intensive ML receipt scanning pipeline.
-
+### 3. Backend Setup
 ```bash
-# Create a virtual environment
 python -m venv .venv
-
-# Activate the virtual environment
-# On Windows:
-.\.venv\Scripts\activate
-# On Mac/Linux:
-source .venv/bin/activate
-
-# Install all backend dependencies
+.\.venv\Scripts\activate  # Windows
 pip install -r requirements.txt
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 5. Frontend Setup
-The frontend is a Vite + React application.
-
+### 4. Frontend Setup
 ```bash
-# Install Node dependencies
+cd frontend
 npm install
-```
-
----
-
-## 🏃‍♂️ Running the Application
-
-You will need two terminal windows to run both the frontend and backend simultaneously.
-
-**Terminal 1: Start the Backend (FastAPI)**
-```bash
-# Ensure your virtual environment is active, then run:
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
-```
-*Note: The first time you upload a receipt, PaddleOCR may take a moment to download its inference models.*
-
-**Terminal 2: Start the Frontend (Vite)**
-```bash
 npm run dev
 ```
 
 The application will be available at `http://localhost:5173`.
-
----
-
-## 🧠 Architecture Overview
-The OCR Pipeline works across several distinct phases when a receipt is uploaded:
-1. **Image Preprocessing:** OpenCV converts the image to grayscale and applies adaptive thresholding to remove shadows.
-2. **Text Detection:** PaddleOCR scans the image and detects bounding boxes for all text.
-3. **Spatial Grouping:** The parser groups bounding boxes by their Y-coordinates to form distinct rows.
-4. **Entity Extraction:** Regular expressions identify prices, quantities, and item names from the grouped rows.
-5. **Validation:** The final total is checked against the sum of the extracted items before saving to MongoDB.

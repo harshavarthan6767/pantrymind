@@ -26,9 +26,8 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from bson import ObjectId
-import pytesseract
-from PIL import Image
-from services.ocr_agent import OCRAgent
+
+
 
 load_dotenv()
 
@@ -99,45 +98,29 @@ async def health_check():
 # ---------------------------------------------------------------------------
 # Receipt Upload Endpoint
 # ---------------------------------------------------------------------------
-@app.post("/api/receipts/upload", tags=["Receipts"])
-async def upload_receipt(
-    file: UploadFile = File(..., description="Receipt or invoice image"),
-    document_type: str = Form("receipt", description="'receipt' or 'invoice'"),
-):
-    """
-    Upload a receipt/invoice image for OCR processing.
-    The Ingestion Agent will:
-      1. Store the raw image in GCS
-      2. Parse it via Document AI
-      3. Categorize items
-      4. Add to inventory + financial ledger
-    """
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(400, "Only image files are accepted.")
+class ReceiptData(BaseModel):
+    store: str
+    items: list[dict]
+    taxes: dict | None = None
+    subtotal: float | None = None
+    total: float | None = None
 
-    content = await file.read()
+@app.post("/api/receipts/upload", tags=["Receipts"])
+async def upload_receipt(data: ReceiptData):
+    """
+    Receive pre-parsed OCR receipt data from the frontend.
+    The frontend (Tesseract.js) handles the heavy OCR work to save CPU.
+    """
     now = datetime.utcnow().isoformat()
 
-    # ---------------------------------------------------------
-    # Advanced Offline OCR Pipeline (PaddleOCR + OpenCV)
-    # ---------------------------------------------------------
     try:
-        # Phase 1: Preprocess (OpenCV)
-        binary_img = OCRAgent.preprocess_image(content)
-        
-        # Phase 2: Extract Text and Bounding Boxes (PaddleOCR)
-        ocr_results = OCRAgent.extract_text_and_boxes(binary_img)
-        
-        # Phase 3 & 4: Parse Layout & Extract Entities (Regex + Spatial)
-        parsed_data = OCRAgent.parse_receipt_layout(ocr_results)
-        
-        store_name = parsed_data.get("store", "Local Market")
-        total_amount = parsed_data.get("total", 0.0)
-        items_to_add = parsed_data.get("items", [])
+        store_name = data.store
+        total_amount = data.total or 0.0
+        items_to_add = data.items
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(500, f"OCR processing failed: {str(e)}")
+        raise HTTPException(500, f"Failed to process receipt data: {str(e)}")
 
     # 1. Add Receipt
     await db_service.insert_one("receipts", {
@@ -176,9 +159,7 @@ async def upload_receipt(
 
     return {
         "status": "success",
-        "filename": file.filename,
-        "size_bytes": len(content),
-        "message": f"Processed offline. Extracted {len(items_to_add)} items.",
+        "message": f"Processed via client-side OCR. Extracted {len(items_to_add)} items.",
         "extracted_data": {
             "store": store_name,
             "total": total_amount,
