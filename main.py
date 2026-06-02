@@ -28,8 +28,8 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from bson import ObjectId
-import google.generativeai as genai
-from google.generativeai.types import content_types
+from google import genai
+from google.genai import types as genai_types
 from PIL import Image
 
 
@@ -104,12 +104,13 @@ async def health_check():
 # Gemini VLM Receipt Extraction Engine
 # ---------------------------------------------------------------------------
 
-# Configure the Gemini SDK
+# Configure the Gemini client (new google-genai SDK)
 _gemini_api_key = os.getenv("GEMINI_API_KEY", "")
 if _gemini_api_key:
-    genai.configure(api_key=_gemini_api_key)
-    logger.info("Gemini API key loaded.")
+    _gemini_client = genai.Client(api_key=_gemini_api_key)
+    logger.info("Gemini API client initialized.")
 else:
+    _gemini_client = None
     logger.warning("GEMINI_API_KEY not set — receipt scanning will fail.")
 
 # Strict JSON schema for constrained decoding (OpenAPI-subset)
@@ -172,19 +173,11 @@ Return the data strictly conforming to the requested JSON schema."""
 
 
 async def extract_receipt_with_gemini(image_bytes: bytes, mime_type: str) -> dict:
-    """Call Gemini 1.5 Flash with constrained JSON schema to extract receipt data."""
-    model = genai.GenerativeModel(
-        model_name=os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
-        generation_config=genai.types.GenerationConfig(
-            response_mime_type="application/json",
-            response_schema=RECEIPT_SCHEMA,
-            temperature=0.1,
-            top_p=0.8,
-            top_k=10,
-        )
-    )
+    """Call Gemini with constrained JSON schema to extract structured receipt data."""
+    if not _gemini_client:
+        raise RuntimeError("Gemini client is not initialized. Set GEMINI_API_KEY.")
 
-    # Resize image if needed (max 1600px longest edge) to reduce token cost
+    # Resize to max 1600px on longest edge to reduce token cost
     img = Image.open(io.BytesIO(image_bytes))
     max_edge = 1600
     if max(img.width, img.height) > max_edge:
@@ -195,16 +188,21 @@ async def extract_receipt_with_gemini(image_bytes: bytes, mime_type: str) -> dic
         image_bytes = buf.getvalue()
         mime_type = "image/jpeg"
 
-    # Build the inline image part for the Gemini API
-    image_part = {
-        "inline_data": {
-            "mime_type": mime_type,
-            "data": base64.b64encode(image_bytes).decode("utf-8")
-        }
-    }
+    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
-    response = await model.generate_content_async(
-        contents=[GEMINI_META_PROMPT, image_part]
+    response = await _gemini_client.aio.models.generate_content(
+        model=model_name,
+        contents=[
+            GEMINI_META_PROMPT,
+            genai_types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+        ],
+        config=genai_types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=RECEIPT_SCHEMA,
+            temperature=0.1,
+            top_p=0.8,
+            top_k=10,
+        )
     )
     return json.loads(response.text)
 
@@ -218,7 +216,7 @@ async def upload_receipt(file: UploadFile = File(...)):
     Accept a raw receipt image, extract structured data via Gemini 1.5 Flash
     (strict JSON schema / constrained decoding), and persist to MongoDB.
     """
-    if not _gemini_api_key:
+    if not _gemini_client:
         raise HTTPException(503, "Gemini API key is not configured on the server.")
 
     now = datetime.utcnow().isoformat()
