@@ -1,0 +1,277 @@
+.dashboard {
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* ---- Welcome ---- */
+.welcome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-bar {
+  width: 4px;
+  align-self: stretch;
+  border-radius: var(--radius-full);
+  background: linear-gradient(to bottom, var(--primary), transparent);
+  flex-shrink: 0;
+}
+
+/* ---- Stats ---- */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-lg);
+}
+
+.stat-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  margin-bottom: 4px;
+}
+
+/* ---- Two-col ---- */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.card-section {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-primary);
+}
+
+/* ---- Receipt List ---- */
+.receipt-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.receipt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.receipt-row:last-child {
+  border-bottom: none;
+}
+
+.receipt-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.receipt-store {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.receipt-amount {
+  font-family: var(--font-headline);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.view-all {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: auto;
+  transition: gap var(--transition-base);
+}
+
+.view-all:hover {
+  gap: 10px;
+}
+
+/* ---- Expiry List ---- */
+.expiry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expiry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  transition: background var(--transition-base);
+}
+
+.expiry-row:hover {
+  background: var(--bg-card);
+}
+
+.expiry-expired {
+  border-left-color: var(--error);
+}
+
+.expiry-expiring {
+  border-left-color: var(--tertiary);
+}
+
+.expiry-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.expiry-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ---- Nutrition ---- */
+.nutrition-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+}
+
+.donut-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.donut-val {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--primary);
+}
+
+.donut-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.macro-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.macro-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.macro-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.macro-name {
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.macro-val {
+  font-family: var(--font-headline);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ---- Restock ---- */
+.restock-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.restock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  background: var(--bg-card);
+}
+
+.restock-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.restock-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.restock-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  margin-top: 4px;
+}
+
+.restock-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}

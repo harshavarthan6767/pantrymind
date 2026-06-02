@@ -1,0 +1,106 @@
+.scan-modal {
+  max-width: 450px;
+}
+
+.scan-area {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.upload-zone:hover {
+  border-color: var(--accent);
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.upload-zone.has-file {
+  border-color: var(--secondary);
+  border-style: solid;
+  background: rgba(129, 140, 248, 0.1);
+}
+
+.upload-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.upload-prompt svg {
+  color: var(--accent);
+}
+
+.upload-prompt p {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.upload-prompt span {
+  font-size: 0.85rem;
+}
+
+.file-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-info svg {
+  color: var(--secondary);
+}
+
+.file-info p {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.file-info span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.scan-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  font-size: 0.9rem;
+}
+
+.scan-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.success-icon {
+  color: var(--accent);
+}
+
+.scan-success p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}

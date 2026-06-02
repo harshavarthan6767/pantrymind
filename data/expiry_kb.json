@@ -1,0 +1,668 @@
+[
+  {
+    "item_name": "apple",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 28
+  },
+  {
+    "item_name": "banana",
+    "category": "Fruits",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "grapes",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 10
+  },
+  {
+    "item_name": "strawberry",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "orange",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 21
+  },
+  {
+    "item_name": "mango",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "watermelon-whole",
+    "category": "Fruits",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "watermelon-cut",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "pineapple-whole",
+    "category": "Fruits",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "pineapple-cut",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "papaya",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "guava",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 4
+  },
+  {
+    "item_name": "pomegranate",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 60
+  },
+  {
+    "item_name": "lemon",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 28
+  },
+  {
+    "item_name": "coconut",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "blueberry",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 10
+  },
+  {
+    "item_name": "raspberry",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "peach",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "pear",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "kiwi",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "avocado",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "cherry",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "plum",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "fig",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "cantaloupe",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "grapefruit",
+    "category": "Fruits",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 21
+  },
+  {
+    "item_name": "tomato",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "potato",
+    "category": "Vegetables",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 35
+  },
+  {
+    "item_name": "onion",
+    "category": "Vegetables",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 30
+  },
+  {
+    "item_name": "carrot",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 28
+  },
+  {
+    "item_name": "spinach",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "broccoli",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "cauliflower",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "capsicum",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "bell pepper",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "cucumber",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "eggplant",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "green beans",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "peas",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "cabbage",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "lettuce",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "mushroom",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "garlic",
+    "category": "Vegetables",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 60
+  },
+  {
+    "item_name": "ginger",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 21
+  },
+  {
+    "item_name": "celery",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "zucchini",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "corn",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "asparagus",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 4
+  },
+  {
+    "item_name": "okra",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "beetroot",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "sweet potato",
+    "category": "Vegetables",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 21
+  },
+  {
+    "item_name": "radish",
+    "category": "Vegetables",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "milk",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "yogurt",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "cheddar cheese",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 28
+  },
+  {
+    "item_name": "mozzarella",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "cream cheese",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "butter",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 90
+  },
+  {
+    "item_name": "heavy cream",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 10
+  },
+  {
+    "item_name": "sour cream",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "paneer",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "cottage cheese",
+    "category": "Dairy",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "ghee",
+    "category": "Dairy",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 90
+  },
+  {
+    "item_name": "eggs",
+    "category": "Eggs",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 35
+  },
+  {
+    "item_name": "chicken breast",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "chicken thigh",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "whole chicken",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "ground chicken",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 1
+  },
+  {
+    "item_name": "mutton",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "goat",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "ground lamb",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 1
+  },
+  {
+    "item_name": "fish fillet",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "whole fish",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "shrimp",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "pork chop",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "ground pork",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 1
+  },
+  {
+    "item_name": "bacon",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "sausage",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "deli meat",
+    "category": "Meat",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "bread-white",
+    "category": "Grains & Bread",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "bread-whole wheat",
+    "category": "Grains & Bread",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "rice-cooked",
+    "category": "Grains & Bread",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "pasta-cooked",
+    "category": "Grains & Bread",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "rice-dry",
+    "category": "Grains & Bread",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 730
+  },
+  {
+    "item_name": "pasta-dry",
+    "category": "Grains & Bread",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 730
+  },
+  {
+    "item_name": "oats",
+    "category": "Grains & Bread",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 365
+  },
+  {
+    "item_name": "flour",
+    "category": "Grains & Bread",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 365
+  },
+  {
+    "item_name": "dal-cooked",
+    "category": "Legumes",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "lentils-cooked",
+    "category": "Legumes",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "dal-dry",
+    "category": "Legumes",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 365
+  },
+  {
+    "item_name": "chickpeas-cooked",
+    "category": "Legumes",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "rajma",
+    "category": "Legumes",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "kidney beans-cooked",
+    "category": "Legumes",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 5
+  },
+  {
+    "item_name": "tofu",
+    "category": "Legumes",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 7
+  },
+  {
+    "item_name": "chapati",
+    "category": "Indian Specials",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "roti",
+    "category": "Indian Specials",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "idli",
+    "category": "Indian Specials",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 2
+  },
+  {
+    "item_name": "dosa batter",
+    "category": "Indian Specials",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "sambar",
+    "category": "Indian Specials",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "chutney-coconut",
+    "category": "Indian Specials",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 3
+  },
+  {
+    "item_name": "pickle-Indian",
+    "category": "Indian Specials",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 365
+  },
+  {
+    "item_name": "cooking oil",
+    "category": "Other",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 180
+  },
+  {
+    "item_name": "honey",
+    "category": "Other",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 730
+  },
+  {
+    "item_name": "sugar",
+    "category": "Other",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 730
+  },
+  {
+    "item_name": "coffee-ground",
+    "category": "Other",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 14
+  },
+  {
+    "item_name": "tea",
+    "category": "Other",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 365
+  },
+  {
+    "item_name": "nuts",
+    "category": "Other",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 180
+  },
+  {
+    "item_name": "jam",
+    "category": "Other",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 30
+  },
+  {
+    "item_name": "ketchup",
+    "category": "Other",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 180
+  },
+  {
+    "item_name": "mayonnaise",
+    "category": "Other",
+    "storage_method": "Refrigerated",
+    "shelf_life_days": 60
+  },
+  {
+    "item_name": "soy sauce",
+    "category": "Other",
+    "storage_method": "Room Temperature",
+    "shelf_life_days": 365
+  }
+]

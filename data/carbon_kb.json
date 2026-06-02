@@ -1,0 +1,482 @@
+[
+  {
+    "item": "beef",
+    "co2_per_kg": 60.0,
+    "category": "meat"
+  },
+  {
+    "item": "lamb",
+    "co2_per_kg": 24.0,
+    "category": "meat"
+  },
+  {
+    "item": "pork",
+    "co2_per_kg": 7.0,
+    "category": "meat"
+  },
+  {
+    "item": "chicken",
+    "co2_per_kg": 6.0,
+    "category": "meat"
+  },
+  {
+    "item": "turkey",
+    "co2_per_kg": 5.0,
+    "category": "meat"
+  },
+  {
+    "item": "fish-farmed",
+    "co2_per_kg": 5.0,
+    "category": "meat"
+  },
+  {
+    "item": "fish-wild",
+    "co2_per_kg": 3.0,
+    "category": "meat"
+  },
+  {
+    "item": "shrimp",
+    "co2_per_kg": 12.0,
+    "category": "meat"
+  },
+  {
+    "item": "goat",
+    "co2_per_kg": 20.0,
+    "category": "meat"
+  },
+  {
+    "item": "mutton",
+    "co2_per_kg": 20.0,
+    "category": "meat"
+  },
+  {
+    "item": "duck",
+    "co2_per_kg": 5.5,
+    "category": "meat"
+  },
+  {
+    "item": "bacon",
+    "co2_per_kg": 7.5,
+    "category": "meat"
+  },
+  {
+    "item": "sausage",
+    "co2_per_kg": 6.5,
+    "category": "meat"
+  },
+  {
+    "item": "cheese",
+    "co2_per_kg": 21.0,
+    "category": "dairy"
+  },
+  {
+    "item": "milk",
+    "co2_per_kg": 3.2,
+    "category": "dairy"
+  },
+  {
+    "item": "butter",
+    "co2_per_kg": 12.0,
+    "category": "dairy"
+  },
+  {
+    "item": "yogurt",
+    "co2_per_kg": 2.5,
+    "category": "dairy"
+  },
+  {
+    "item": "cream",
+    "co2_per_kg": 5.5,
+    "category": "dairy"
+  },
+  {
+    "item": "paneer",
+    "co2_per_kg": 8.0,
+    "category": "dairy"
+  },
+  {
+    "item": "ghee",
+    "co2_per_kg": 14.0,
+    "category": "dairy"
+  },
+  {
+    "item": "cream_cheese",
+    "co2_per_kg": 10.0,
+    "category": "dairy"
+  },
+  {
+    "item": "cottage_cheese",
+    "co2_per_kg": 4.0,
+    "category": "dairy"
+  },
+  {
+    "item": "rice",
+    "co2_per_kg": 4.0,
+    "category": "grains"
+  },
+  {
+    "item": "wheat",
+    "co2_per_kg": 1.4,
+    "category": "grains"
+  },
+  {
+    "item": "bread",
+    "co2_per_kg": 1.6,
+    "category": "grains"
+  },
+  {
+    "item": "pasta",
+    "co2_per_kg": 1.2,
+    "category": "grains"
+  },
+  {
+    "item": "oats",
+    "co2_per_kg": 1.6,
+    "category": "grains"
+  },
+  {
+    "item": "flour",
+    "co2_per_kg": 1.3,
+    "category": "grains"
+  },
+  {
+    "item": "chapati",
+    "co2_per_kg": 1.5,
+    "category": "grains"
+  },
+  {
+    "item": "idli",
+    "co2_per_kg": 1.0,
+    "category": "grains"
+  },
+  {
+    "item": "dosa",
+    "co2_per_kg": 1.1,
+    "category": "grains"
+  },
+  {
+    "item": "tomato",
+    "co2_per_kg": 1.4,
+    "category": "vegetables"
+  },
+  {
+    "item": "potato",
+    "co2_per_kg": 0.5,
+    "category": "vegetables"
+  },
+  {
+    "item": "onion",
+    "co2_per_kg": 0.4,
+    "category": "vegetables"
+  },
+  {
+    "item": "carrot",
+    "co2_per_kg": 0.4,
+    "category": "vegetables"
+  },
+  {
+    "item": "broccoli",
+    "co2_per_kg": 0.9,
+    "category": "vegetables"
+  },
+  {
+    "item": "spinach",
+    "co2_per_kg": 0.7,
+    "category": "vegetables"
+  },
+  {
+    "item": "capsicum",
+    "co2_per_kg": 1.2,
+    "category": "vegetables"
+  },
+  {
+    "item": "eggplant",
+    "co2_per_kg": 0.8,
+    "category": "vegetables"
+  },
+  {
+    "item": "beans",
+    "co2_per_kg": 0.8,
+    "category": "vegetables"
+  },
+  {
+    "item": "peas",
+    "co2_per_kg": 0.9,
+    "category": "vegetables"
+  },
+  {
+    "item": "mushroom",
+    "co2_per_kg": 0.8,
+    "category": "vegetables"
+  },
+  {
+    "item": "cucumber",
+    "co2_per_kg": 0.7,
+    "category": "vegetables"
+  },
+  {
+    "item": "cabbage",
+    "co2_per_kg": 0.4,
+    "category": "vegetables"
+  },
+  {
+    "item": "lettuce",
+    "co2_per_kg": 0.7,
+    "category": "vegetables"
+  },
+  {
+    "item": "cauliflower",
+    "co2_per_kg": 0.8,
+    "category": "vegetables"
+  },
+  {
+    "item": "zucchini",
+    "co2_per_kg": 0.5,
+    "category": "vegetables"
+  },
+  {
+    "item": "asparagus",
+    "co2_per_kg": 0.9,
+    "category": "vegetables"
+  },
+  {
+    "item": "corn",
+    "co2_per_kg": 1.1,
+    "category": "vegetables"
+  },
+  {
+    "item": "celery",
+    "co2_per_kg": 0.5,
+    "category": "vegetables"
+  },
+  {
+    "item": "garlic",
+    "co2_per_kg": 0.5,
+    "category": "vegetables"
+  },
+  {
+    "item": "ginger",
+    "co2_per_kg": 0.6,
+    "category": "vegetables"
+  },
+  {
+    "item": "okra",
+    "co2_per_kg": 0.6,
+    "category": "vegetables"
+  },
+  {
+    "item": "beetroot",
+    "co2_per_kg": 0.4,
+    "category": "vegetables"
+  },
+  {
+    "item": "sweet_potato",
+    "co2_per_kg": 0.5,
+    "category": "vegetables"
+  },
+  {
+    "item": "radish",
+    "co2_per_kg": 0.3,
+    "category": "vegetables"
+  },
+  {
+    "item": "apple",
+    "co2_per_kg": 0.4,
+    "category": "fruits"
+  },
+  {
+    "item": "banana",
+    "co2_per_kg": 0.7,
+    "category": "fruits"
+  },
+  {
+    "item": "orange",
+    "co2_per_kg": 0.5,
+    "category": "fruits"
+  },
+  {
+    "item": "grapes",
+    "co2_per_kg": 1.4,
+    "category": "fruits"
+  },
+  {
+    "item": "strawberry",
+    "co2_per_kg": 1.3,
+    "category": "fruits"
+  },
+  {
+    "item": "mango",
+    "co2_per_kg": 0.9,
+    "category": "fruits"
+  },
+  {
+    "item": "watermelon",
+    "co2_per_kg": 0.3,
+    "category": "fruits"
+  },
+  {
+    "item": "pineapple",
+    "co2_per_kg": 0.6,
+    "category": "fruits"
+  },
+  {
+    "item": "papaya",
+    "co2_per_kg": 0.6,
+    "category": "fruits"
+  },
+  {
+    "item": "pomegranate",
+    "co2_per_kg": 0.5,
+    "category": "fruits"
+  },
+  {
+    "item": "guava",
+    "co2_per_kg": 0.4,
+    "category": "fruits"
+  },
+  {
+    "item": "lemon",
+    "co2_per_kg": 0.3,
+    "category": "fruits"
+  },
+  {
+    "item": "coconut",
+    "co2_per_kg": 0.6,
+    "category": "fruits"
+  },
+  {
+    "item": "avocado",
+    "co2_per_kg": 2.5,
+    "category": "fruits"
+  },
+  {
+    "item": "kiwi",
+    "co2_per_kg": 1.1,
+    "category": "fruits"
+  },
+  {
+    "item": "blueberry",
+    "co2_per_kg": 1.5,
+    "category": "fruits"
+  },
+  {
+    "item": "cherry",
+    "co2_per_kg": 1.2,
+    "category": "fruits"
+  },
+  {
+    "item": "eggs",
+    "co2_per_kg": 4.5,
+    "category": "protein"
+  },
+  {
+    "item": "tofu",
+    "co2_per_kg": 3.0,
+    "category": "protein"
+  },
+  {
+    "item": "lentils",
+    "co2_per_kg": 0.9,
+    "category": "protein"
+  },
+  {
+    "item": "chickpeas",
+    "co2_per_kg": 0.8,
+    "category": "protein"
+  },
+  {
+    "item": "nuts",
+    "co2_per_kg": 2.3,
+    "category": "protein"
+  },
+  {
+    "item": "soy",
+    "co2_per_kg": 2.0,
+    "category": "protein"
+  },
+  {
+    "item": "kidney_beans",
+    "co2_per_kg": 0.8,
+    "category": "protein"
+  },
+  {
+    "item": "peanuts",
+    "co2_per_kg": 1.2,
+    "category": "protein"
+  },
+  {
+    "item": "sugar",
+    "co2_per_kg": 3.2,
+    "category": "other"
+  },
+  {
+    "item": "chocolate",
+    "co2_per_kg": 19.0,
+    "category": "other"
+  },
+  {
+    "item": "coffee",
+    "co2_per_kg": 17.0,
+    "category": "other"
+  },
+  {
+    "item": "tea",
+    "co2_per_kg": 1.2,
+    "category": "other"
+  },
+  {
+    "item": "cooking_oil",
+    "co2_per_kg": 3.5,
+    "category": "other"
+  },
+  {
+    "item": "palm_oil",
+    "co2_per_kg": 8.0,
+    "category": "other"
+  },
+  {
+    "item": "olive_oil",
+    "co2_per_kg": 6.0,
+    "category": "other"
+  },
+  {
+    "item": "honey",
+    "co2_per_kg": 1.5,
+    "category": "other"
+  },
+  {
+    "item": "jam",
+    "co2_per_kg": 1.8,
+    "category": "other"
+  },
+  {
+    "item": "ketchup",
+    "co2_per_kg": 1.5,
+    "category": "other"
+  },
+  {
+    "item": "soy_sauce",
+    "co2_per_kg": 1.0,
+    "category": "other"
+  },
+  {
+    "item": "mayonnaise",
+    "co2_per_kg": 2.8,
+    "category": "other"
+  },
+  {
+    "item": "sambar",
+    "co2_per_kg": 1.2,
+    "category": "other"
+  },
+  {
+    "item": "chutney",
+    "co2_per_kg": 0.8,
+    "category": "other"
+  },
+  {
+    "item": "pickle",
+    "co2_per_kg": 1.0,
+    "category": "other"
+  }
+]

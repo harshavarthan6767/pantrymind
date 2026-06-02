@@ -1,0 +1,501 @@
+/* ═══════════════════════════════════════════════════
+   Kitchen Page Styles — Intelligent Obsidian
+   ═══════════════════════════════════════════════════ */
+
+.kitchen-page {
+  padding: 0 32px 40px;
+  animation: fadeInPage 0.4s ease-out;
+}
+
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Layout ─────────────────────────────────────── */
+.kitchen-layout {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 24px;
+  min-height: calc(100vh - 140px);
+}
+
+/* ── Glass Card (shared) ────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 20px;
+  animation: fadeCardIn 0.45s ease-out both;
+}
+.glass-card:nth-child(2) { animation-delay: 0.08s; }
+.glass-card:nth-child(3) { animation-delay: 0.16s; }
+
+@keyframes fadeCardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.card-header h3 {
+  font-family: var(--font-heading, 'Sora', sans-serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #e5e2e1);
+  margin: 0;
+}
+
+.icon-green {
+  color: #4ade80;
+}
+
+/* ── Left: AI Chef Chat Card ────────────────────── */
+.kitchen-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.kitchen-chat-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 20px;
+}
+
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #0a0a0a;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* scrollbar */
+.chat-area::-webkit-scrollbar { width: 4px; }
+.chat-area::-webkit-scrollbar-track { background: transparent; }
+.chat-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+/* ── Chat Bubbles ───────────────────────────────── */
+.chat-row {
+  display: flex;
+}
+.chat-row--user { justify-content: flex-end; }
+.chat-row--ai   { justify-content: flex-start; }
+
+.chat-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-primary, #e5e2e1);
+}
+
+.chat-bubble--user {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.chat-bubble--ai {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-left: 3px solid rgba(74, 222, 128, 0.4);
+}
+
+/* ── Meal Plan Card ─────────────────────────────── */
+.chat-bubble--plan {
+  padding: 0;
+  overflow: hidden;
+}
+
+.meal-plan-header {
+  font-family: var(--font-heading, 'Sora', sans-serif);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-primary, #e5e2e1);
+}
+
+.meal-plan-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.meal-plan-list li {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: center;
+}
+.meal-plan-list li:last-child {
+  border-bottom: none;
+}
+
+.meal-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #4ade80;
+}
+
+.meal-desc {
+  font-size: 13px;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.meal-cal {
+  font-size: 12px;
+  color: var(--text-muted, #6b7280);
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-variant-numeric: tabular-nums;
+}
+
+.meal-plan-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.meal-plan-total-val {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+/* ── Chat Input Bar ─────────────────────────────── */
+.chat-input-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 13px;
+  color: var(--text-primary, #e5e2e1);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.chat-input::placeholder { color: var(--text-muted, #6b7280); }
+.chat-input:focus { border-color: rgba(74, 222, 128, 0.4); }
+
+.chat-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: #4ade80;
+  color: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+.chat-send-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 16px rgba(74, 222, 128, 0.35);
+}
+
+.chat-mic-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--text-secondary, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.chat-mic-btn:hover {
+  color: var(--text-primary, #e5e2e1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Right Column ───────────────────────────────── */
+.kitchen-right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Nutrition Circular Progress ────────────────── */
+.nutrition-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.circular-progress-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.circular-svg {
+  width: 80px;
+  height: 80px;
+}
+
+.circular-bar {
+  transition: stroke-dashoffset 0.8s ease;
+}
+
+.circular-pct {
+  font-family: var(--font-heading, 'Sora', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.circular-label {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.circular-value {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 11px;
+  color: var(--text-muted, #6b7280);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Meal Settings ──────────────────────────────── */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.settings-row:last-child { border-bottom: none; }
+
+.settings-label {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 13px;
+  color: var(--text-secondary, #9ca3af);
+}
+
+/* Stepper */
+.settings-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stepper-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.stepper-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #e5e2e1);
+}
+
+.stepper-value {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #e5e2e1);
+  min-width: 100px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Select */
+.settings-select-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.settings-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 30px 6px 12px;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 13px;
+  color: var(--text-primary, #e5e2e1);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.settings-select:focus { border-color: rgba(74, 222, 128, 0.4); }
+.settings-select option {
+  background: #131313;
+  color: #e5e2e1;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: var(--text-muted, #6b7280);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.25s;
+}
+.toggle-switch--on {
+  background: #4ade80;
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.toggle-switch--on .toggle-knob {
+  transform: translateX(18px);
+}
+
+/* ── Shopping List ──────────────────────────────── */
+.shopping-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+
+.shopping-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.shopping-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.shopping-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
+  cursor: pointer;
+  color: #0a0a0a;
+}
+
+.shopping-checkbox--checked {
+  background: #4ade80;
+  border-color: #4ade80;
+}
+
+.shopping-name {
+  flex: 1;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 13px;
+  color: var(--text-primary, #e5e2e1);
+  transition: opacity 0.2s;
+}
+.shopping-name--done {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+.shopping-qty {
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 12px;
+  color: var(--text-muted, #6b7280);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Buttons ────────────────────────────────────── */
+.btn-primary {
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  font-family: var(--font-body, 'Inter', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover {
+  background: rgba(74, 222, 128, 0.2);
+}
+
+/* ── Responsive ─────────────────────────────────── */
+@media (max-width: 900px) {
+  .kitchen-layout {
+    grid-template-columns: 1fr;
+  }
+  .kitchen-left {
+    min-height: 420px;
+  }
+}
