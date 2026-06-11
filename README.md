@@ -1,6 +1,23 @@
 # 🛒 PantryMind - AI Pantry Manager & Receipt Scanner
 
-PantryMind is an intelligent grocery inventory management application built to automate receipt scanning and tracking. It uses a modern **client-side OCR architecture** to parse physical receipts directly in the browser, completely eliminating the need for heavy server-side machine learning dependencies!
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Node.js 18+](https://img.shields.io/badge/node-18+-green.svg)](https://nodejs.org/)
+[![Built with Gemini](https://img.shields.io/badge/Built%20with-Gemini-blueviolet)](https://ai.google.dev/)
+[![MongoDB MCP](https://img.shields.io/badge/MongoDB-MCP-brightgreen)](https://www.mongodb.com/)
+
+PantryMind is an intelligent grocery inventory management application built to automate receipt scanning and tracking. It uses a modern **Multi-Agent Architecture** powered by Google ADK, Gemini 2.5 Flash, and the official MongoDB MCP server to manage household inventory, receipts, meal planning, and finances.
+
+---
+
+## 🚀 Key Features & Differentiators
+
+1. **Official MongoDB MCP Integration**: Database interactions are powered by `@mongodb-js/mcp-server-mongodb` using npx. This isn't a wrapper—it's native MCP standard bridging AI and Atlas.
+2. **Multi-Agent Orchestration (Google ADK)**: Separate specialized agents handle the Kitchen, Finances, Pantry, and Shopping, managed by a smart Orchestrator.
+3. **Human-in-the-Loop Governance**: A robust policy engine intercepts potentially destructive actions (e.g., adding/deleting inventory). An Approval Inbox UI forces user sign-off for medium/high-risk actions.
+4. **Agent Reflexion**: The Kitchen Agent self-critiques its generated meal plans against your dietary constraints and expiring items before showing them to you.
+5. **Atlas Vector Search**: Semantic pantry queries allow you to ask for "Thai curry ingredients" instead of strict exact-match searches.
+6. **Pure Client-Side OCR**: Uses HTML5 Canvas + WebAssembly (Tesseract.js) in a Web Worker to parse receipts directly in the browser without backend CPU freezing.
 
 ---
 
@@ -8,56 +25,55 @@ PantryMind is an intelligent grocery inventory management application built to a
 
 The application is split into a **Vite + React Frontend** and a **FastAPI + MongoDB Backend**.
 
-### 1. The Lightweight Client-Side OCR Architecture
-Initially, the project used server-side Python libraries (PaddleOCR, OpenCV, ONNX) to process receipts. This was completely overhauled to a **Pure WebAssembly (WASM)** architecture for maximum scalability.
+### 1. The Multi-Agent Layer
+- **Orchestrator**: Evaluates user queries and routes them to the correct sub-agent.
+- **Pantry Agent**: Has governed write-access to the inventory collection.
+- **Finance Agent**: Read-only access to the financial ledger for spending summaries.
+- **Kitchen Chef**: Read-only access; runs the PuLP optimizer to balance macros and Reflexion to double-check meal plans.
 
-- **HTML5 Canvas Preprocessing**: Instead of using Python's OpenCV, the frontend uses native `canvas.getContext('2d')` to instantly scale down high-resolution smartphone photos and apply `grayscale` and `contrast` filters before scanning. This prevents browser CPU freezing.
-- **Tesseract.js (Web Workers)**: The preprocessed image is passed to `Tesseract.js`, a WASM port of the famous OCR engine. By running in a background Web Worker thread, it extracts text asynchronously without interrupting the React UI animations.
-
-### 2. The "Bouncer & Chopper" Parsing Engine
-Raw OCR output from receipts is notoriously messy (often called "OCR garbage"). We implemented a highly resilient, subtractive JavaScript parsing loop in `frontend/src/services/ocrService.js`:
-
-- **The Bouncer**: Instantly rejects lines containing structural metadata (e.g., "SUBTOTAL", "TAX", "TOTAL").
-- **The Chopper**: Chops off any internal categorization metadata that might have been appended by other systems.
-- **The Junk Filter**: Evaluates the ratio of symbols (like `—`, `=`, `~`) to alphanumeric characters. If a line is heavily skewed towards symbols, it is classified as a "phantom line" (a crease or shadow hallucination) and silently dropped.
-- **Subtractive Price Extraction**: To defeat the "Double-Price Trap" (where receipts print Unit Price and Total Price on the same line), the parser globally extracts *all* decimals first, assigns the final one to the total, and then completely erases them from the string.
-- **Cleanup**: Weights, quantities, and trailing tax flags (`F` or `T`) are individually regex-matched and wiped out.
-- **Final Polish**: What remains is a pristine item name, completely stripped of all numbers, weights, and symbols.
+### 2. The Lightweight Client-Side OCR Architecture
+Instead of heavy server-side processing, OCR runs in-browser using **HTML5 Canvas Preprocessing** (grayscale/contrast filters) and **Tesseract.js (Web Workers)**. Raw OCR output is processed by a resilient "Bouncer & Chopper" parsing engine that eliminates junk characters, isolates prices, and formats a clean JSON payload.
 
 ### 3. The Backend API
-The backend (`main.py`) acts as a fast, asynchronous persistence layer.
 - **Framework**: FastAPI with asynchronous endpoints.
-- **Database**: MongoDB (via `motor.motor_asyncio`), storing data in specific collections: `inventory`, `receipts`, `financial_ledger`, etc.
-- **Data Flow**: The frontend sends a clean JSON payload (`ReceiptData` Pydantic model) containing the extracted items and total. The backend iterates through the array, inserting items into the `inventory` collection and appending a transaction to the `financial_ledger`.
+- **Database**: MongoDB (via `motor.motor_asyncio`) storing data in `inventory`, `receipts`, and `financial_ledger`.
 
 ---
 
 ## 📂 Directory Structure
 
 ### `/frontend` (React + Vite)
-- `src/components/`: Contains UI components like `Dashboard.jsx` (main view), `InventoryList.jsx`, and `ScanReceiptModal.jsx` (handles file upload UI).
+- `src/components/`: UI components including `Dashboard.jsx`, `InventoryList.jsx`, `GlobalVoiceAgent.jsx`, and `ApprovalInbox.jsx`.
 - `src/services/`: 
-  - `ocrService.js`: The heart of the client-side OCR. Handles Canvas preprocessing, Tesseract extraction, and the Chopper/Bouncer logic.
+  - `ocrService.js`: Client-side OCR parsing logic.
   - `api.js`: Axios wrapper for communicating with the FastAPI backend.
 
 ### `/` (Root Backend)
-- `main.py`: The FastAPI application. Defines Pydantic models (e.g., `InventoryItem`, `ReceiptData`) and contains all routing (`/api/inventory`, `/api/receipts/upload`).
-- `services/mongodb.py`: The asynchronous Motor client wrapper to handle generic CRUD operations across the various MongoDB collections.
-- `requirements.txt`: Python dependencies (FastAPI, Motor, Uvicorn, Pydantic).
+- `main.py`: FastAPI application routing.
+- `adk/`: Agent Development Kit definitions for the orchestrator and specialized agents.
+- `services/`: Motor async client, Voice WebSocket service, Kitchen service.
+- `tools/`: MCP and custom tools for the agents.
 
 ---
 
-## 🚀 Setup & Execution
+## 💻 Setup & Execution
 
 ### 1. Prerequisites
 - **Node.js** (v18+ recommended)
 - **Python** (v3.10+ recommended)
-- **MongoDB Atlas** account (or local MongoDB server)
+- **MongoDB Atlas** account (M0 free tier is fine)
+- **Google Cloud Platform / Gemini API Key**
 
 ### 2. Environment Variables
-Create a `.env` file in the root of the project:
+Create a `.env` file in the root:
 ```env
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/finmind?retryWrites=true&w=majority
+MONGODB_DATABASE=finmind
+GOOGLE_CLOUD_PROJECT=your-gcp-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
+GEMINI_API_KEY=your_api_key
+GEMINI_MODEL=gemini-2.5-flash
+VOICE_DISABLE_TOOLS=false
 ```
 
 ### 3. Backend Setup
@@ -76,3 +92,16 @@ npm run dev
 ```
 
 The application will be available at `http://localhost:5173`.
+
+---
+
+## 🏆 Hackathon Submission
+This project is submitted to the **Google Cloud Agent Builder + MongoDB MCP** track.
+* **Demo Video**: [Coming Soon](https://youtube.com)
+* **Evidence Package**: Included in the `submission_evidence` folder.
+* **Live Demo**: *PantryMind is an Electron desktop app.* To run it locally, please follow the setup instructions above or use the provided `StartPantryMind.bat` script on Windows.
+
+---
+
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

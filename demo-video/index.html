@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PantryMind Showcase</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+    }
+    canvas {
+      width: 1920px;
+      height: 1080px;
+      background: #000;
+      transform: scale(0.6);
+      border-radius: 12px;
+      box-shadow: 0 0 50px rgba(0, 255, 136, 0.2);
+    }
+    #status {
+      position: absolute;
+      top: 20px;
+      font-size: 24px;
+      color: #00ff88;
+      text-shadow: 0 0 10px #00ff88;
+    }
+  </style>
+</head>
+<body>
+  <div id="status">Recording... Please wait 30 seconds.</div>
+  <canvas id="canvas" width="1920" height="1080"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('status');
+    let frame = 0;
+    
+    // Set up recording
+    const stream = canvas.captureStream(30);
+    const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+    const chunks = [];
+    
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'PantryMind-Demo.webm';
+      a.click();
+      statusDiv.textContent = 'Recording complete! File downloaded.';
+    };
+    
+    mediaRecorder.start();
+
+    // Animation Loop
+    function draw() {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, 1920, 1080);
+      
+      const time = frame / 30; // seconds
+      
+      // Neon Colors
+      const sage = '#00ff88';
+      const amber = '#ffaa00';
+      
+      // Title Scene
+      if (time < 5) {
+        ctx.globalAlpha = Math.min(time, 1);
+        ctx.fillStyle = sage;
+        ctx.font = 'bold 120px Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowBlur = 40;
+        ctx.shadowColor = sage;
+        ctx.fillText('PantryMind', 960, 500);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = '40px Arial';
+        ctx.shadowBlur = 0;
+        ctx.fillText('AI-Powered Life Management with Google ADK', 960, 600);
+      }
+      
+      // Dashboard Scene
+      else if (time < 10) {
+        ctx.globalAlpha = Math.min(time - 5, 1);
+        ctx.fillStyle = '#1e293b';
+        ctx.roundRect(460, 300, 1000, 500, 20);
+        ctx.fill();
+        
+        ctx.strokeStyle = sage;
+        ctx.lineWidth = 4;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = sage;
+        ctx.stroke();
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = '60px Arial';
+        ctx.shadowBlur = 0;
+        ctx.fillText('Multi-Agent Dashboard', 960, 450);
+        
+        ctx.fillStyle = amber;
+        ctx.fillText('Kitchen • Finance • Pantry', 960, 550);
+      }
+      
+      // Voice Scene
+      else if (time < 15) {
+        ctx.globalAlpha = Math.min(time - 10, 1);
+        ctx.fillStyle = '#fff';
+        ctx.font = '80px Arial';
+        ctx.fillText('Voice Assistant', 960, 300);
+        
+        // Sine wave animation
+        ctx.beginPath();
+        ctx.moveTo(460, 600);
+        for(let i = 0; i < 1000; i++) {
+          ctx.lineTo(460 + i, 600 + Math.sin(i * 0.02 + time * 5) * 100 * Math.sin(time));
+        }
+        ctx.strokeStyle = sage;
+        ctx.lineWidth = 8;
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = sage;
+        ctx.stroke();
+      }
+      
+      // Architecture Scene
+      else if (time < 20) {
+        ctx.globalAlpha = Math.min(time - 15, 1);
+        ctx.fillStyle = sage;
+        ctx.font = 'bold 80px Arial';
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = sage;
+        ctx.fillText('MongoDB MCP Integration', 960, 400);
+        
+        ctx.fillStyle = '#fff';
+        ctx.font = '40px Arial';
+        ctx.shadowBlur = 0;
+        ctx.fillText('Direct connection to Atlas Vector Search', 960, 550);
+        ctx.fillText('Human-in-the-loop Governance', 960, 650);
+      }
+      
+      // Outro
+      else if (time < 25) {
+        ctx.globalAlpha = Math.min(time - 20, 1);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 100px Arial';
+        ctx.fillText('Thank You!', 960, 540);
+      }
+
+      ctx.globalAlpha = 1;
+      
+      frame++;
+      
+      if (time < 25) {
+        requestAnimationFrame(draw);
+      } else {
+        mediaRecorder.stop();
+      }
+    }
+    
+    draw();
+  </script>
+</body>
+</html>
