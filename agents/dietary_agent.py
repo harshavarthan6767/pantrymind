@@ -118,7 +118,7 @@ Use this format for every recipe:
 
 # ── Agent Definition ───────────────────────────────────────────────────────
 dietary_agent = Agent(
-    model="gemini-2.5-flash",
+    model="gemini-3.1-pro",
     name="dietary_agent",
     description=(
         "Hybrid meal planner and Teacher Chef chatbot. Uses PuLP for "

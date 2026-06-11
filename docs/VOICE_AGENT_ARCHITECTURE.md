@@ -8,7 +8,7 @@ PantryMind features a highly advanced, real-time Voice Agent powered by **Gemini
 
 The Voice Architecture consists of three primary layers:
 1. **The Audio Client (React Frontend)**: Captures microphone audio using the Web Audio API, encodes it to base64 PCM, and streams it to the FastAPI backend.
-2. **The Voice Bridge (FastAPI `voice_service.py`)**: Acts as a middleman. It maintains a stateful WebSocket connection with the Gemini Live API (`gemini-live-2.5-flash-native-audio`), forwarding audio chunks and managing tool declarations.
+2. **The Voice Bridge (FastAPI `voice_service.py`)**: Acts as a middleman. It maintains a stateful WebSocket connection with the Gemini Live API (`gemini-live-3.1-pro-native-audio`), forwarding audio chunks and managing tool declarations.
 3. **The ADK Backend (Google Agent Development Kit)**: The deterministic, governed AI agents (Kitchen, Pantry, Finance) connected to the MongoDB MCP.
 
 ---
@@ -61,7 +61,7 @@ This guarantees that even if Gemini Live drops the tool call due to audio artifa
 
 Voice interactions often return massive blocks of text. Reading a recipe aloud is tedious. Therefore, we offload complex data to a **Visual Side Panel**.
 
-1. **Recipe Post-Processor**: When the backend Kitchen Agent generates a meal plan, it is passed through a lightweight `gemini-2.5-flash-lite` formatting step (`_extract_recipe_structured`). This forces the unstructured text into strict `:::recipe:::` blocks.
+1. **Recipe Post-Processor**: When the backend Kitchen Agent generates a meal plan, it is passed through a lightweight `gemini-3.1-pro` formatting step (`_extract_recipe_structured`). This forces the unstructured text into strict `:::recipe:::` blocks.
 2. **WebSocket Dispatch**: The FastAPI server sends a JSON payload `{"type": "voice_results", "sender": "PantryMind", "message": "..."}` to the React frontend.
 3. **React Rendering**: `GlobalVoiceAgent.jsx` intercepts this. It filters out any "user" chat bubbles to keep the side panel clean. If it detects `:::recipe:::`, it dynamically mounts the `<RecipeCard />` component, allowing the user to view the recipe visually while the Voice Agent speaks the summary.
 
@@ -91,7 +91,7 @@ sequenceDiagram
     FastAPI Bridge->>Gemini Live: tool_response
     Gemini Live-->>React UI: "I found salmon. Recipe on your screen." (Audio)
     
-    FastAPI Bridge->>FastAPI Bridge: gemini-2.5-flash-lite formats :::recipe:::
+    FastAPI Bridge->>FastAPI Bridge: gemini-3.1-pro formats :::recipe:::
     FastAPI Bridge->>React UI: send {"type": "voice_results", "message": ":::recipe:::"}
     React UI->>User: Renders <RecipeCard /> in side panel
 ```

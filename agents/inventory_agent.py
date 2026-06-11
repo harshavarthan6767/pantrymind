@@ -103,7 +103,7 @@ satisfied.
 
 # ── Agent Definition ───────────────────────────────────────────────────────
 inventory_agent = Agent(
-    model="gemini-2.5-flash",
+    model="gemini-3.1-pro",
     name="inventory_agent",
     description=(
         "ReAct-based inventory manager. Handles adding, updating, consuming, "

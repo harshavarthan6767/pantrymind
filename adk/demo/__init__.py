@@ -1,0 +1,3 @@
+"""
+HACKATHON_SUBMISSION_CHECKLIST.md — Phase 3 · Day 5
+"""

@@ -18,11 +18,15 @@ import re
 import json
 import base64
 import logging
-from datetime import datetime
+import asyncio
+from uuid import uuid4
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from services.llm_client import call_gemini_with_retry
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -34,9 +38,28 @@ from PIL import Image
 
 
 
-load_dotenv()
+load_dotenv(override=True)
 
-from services.db_service import MongoDBService
+from adk.runner import init_runner
+from routers.agent import router as agent_router
+from routers.proactive import router as proactive_router
+from routers.approvals import router as approvals_router
+from routers.traces import router as traces_router
+
+from services.db_service import MongoDBService, get_db_service
+from services.chat_service import ChatService
+from services.kitchen_chat_service import KitchenChatService
+from services.voice_service import GlobalVoiceService
+from services.auth import DEMO_USER_ID, get_current_user
+from schemas.requests import ChatRequest, InventoryItemRequest
+from middleware.error_handler import global_exception_handler, validation_exception_handler
+from services.expiry_calculator import calculate_expiry_dates, get_item_status
+from services.enrichment_service import enrich_packed_items_background
+from services.smart_expiry_agent import estimate_expiry_with_ai
+from services.image_service import get_product_image_url
+from services.medical_agent import research_condition, check_inventory_safety, get_dietary_restrictions
+from services.finance_chat_service import FinanceChatService
+from agents.ordering_tools import simulate_platform_order
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -48,18 +71,40 @@ logging.basicConfig(
 logger = logging.getLogger("pantrymind")
 
 # ---------------------------------------------------------------------------
-# Lifespan — connect/disconnect MongoDB
+# Global Services
 # ---------------------------------------------------------------------------
-db_service = MongoDBService()
+_db_service = None
+_gemini_client = None
+chat_service = None
+kitchen_chat_service = None
+global_voice_service = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: connect to MongoDB Atlas. Shutdown: close connection."""
-    await db_service.connect()
+    """Startup: connect to MongoDB Atlas + pre-warm PaddleOCR. Shutdown: close connection."""
+    global _db_service, chat_service, kitchen_chat_service, finance_chat_service, global_voice_service
+    _db_service = get_db_service()
+    await _db_service.connect()
+    
+    kitchen_model = os.getenv("GEMINI_MODEL_KITCHEN", os.getenv("GEMINI_MODEL", "gemini-3.1-pro"))
+    kitchen_chat_service = KitchenChatService(_db_service, _gemini_client, model_name=kitchen_model)
+    # Finance Agent — uses Flash Lite for cost savings on structured queries
+    finance_model = "gemini-3.1-pro"
+    finance_chat_service = FinanceChatService(_db_service, _gemini_client, model_name=finance_model)
+    chat_service = ChatService(_db_service, _gemini_client)
+    global_voice_service = GlobalVoiceService(_gemini_client)
+    
     logger.info("MongoDB Atlas connected.")
+    
+    # NEW: Initialize ADK runner
+    await init_runner()
+    
+    daemon_task = asyncio.create_task(image_generation_daemon())
+    
     yield
-    await db_service.close()
+    daemon_task.cancel()
+    await _db_service.close()
     logger.info("MongoDB Atlas disconnected.")
 
 
@@ -75,14 +120,32 @@ app = FastAPI(
 )
 
 # CORS for frontend dev server
+_cors_origins = os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else []
+_cors_regex = r"http://localhost(:\d+)?" if not _cors_origins else None
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:5173").split(","),
+    allow_origins=_cors_origins or ["*"],
+    allow_origin_regex=_cors_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+app.add_exception_handler(Exception, global_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+
+# NEW: Unified ADK agent router
+app.include_router(agent_router)
+
+# NEW: Proactive scanners router
+app.include_router(proactive_router)
+
+# NEW: Approvals router for Governance layer
+app.include_router(approvals_router)
+
+# NEW: Traces router for evidence capture
+app.include_router(traces_router)
 
 # ---------------------------------------------------------------------------
 # Health Check
@@ -91,7 +154,7 @@ app.add_middleware(
 async def health_check():
     """Health check — verifies MongoDB connectivity."""
     try:
-        await db_service.ping()
+        await _db_service.ping()
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
         return JSONResponse(
@@ -104,182 +167,311 @@ async def health_check():
 # Gemini VLM Receipt Extraction Engine
 # ---------------------------------------------------------------------------
 
-# Configure the Gemini client (new google-genai SDK)
-_gemini_api_key = os.getenv("GEMINI_API_KEY", "")
-if _gemini_api_key:
-    _gemini_client = genai.Client(api_key=_gemini_api_key)
-    logger.info("Gemini API client initialized.")
+# Configure the Gemini client (new google-genai SDK with Vertex AI & Studio support)
+_gemini_backend = os.getenv("GEMINI_BACKEND", "studio").lower()
+
+if _gemini_backend == "vertex":
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+    _gemini_client = genai.Client(
+        vertexai=True,
+        project=project_id,
+        location=location
+    )
+    logger.info(f"Gemini Vertex AI client initialized (Project: {project_id}, Location: {location}).")
 else:
-    _gemini_client = None
-    logger.warning("GEMINI_API_KEY not set — receipt scanning will fail.")
+    _gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+    if _gemini_api_key:
+        _gemini_client = genai.Client(api_key=_gemini_api_key)
+        logger.info("Gemini AI Studio client initialized.")
+    else:
+        _gemini_client = None
+        logger.warning("Neither GEMINI_BACKEND=vertex nor GEMINI_API_KEY is configured.")
 
 # Strict JSON schema for constrained decoding (OpenAPI-subset)
-RECEIPT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "storeName": {
-            "type": "string",
-            "description": "The registered name of the retail store. No address."
-        },
-        "items": {
-            "type": "array",
-            "description": "List of grocery line items ONLY. Never include taxes, subtotals, discounts, or rounding here.",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string", "description": "Clean product name. Strip all weights, sizes, package types."},
-                    "quantity": {"type": "number", "description": "Numerical quantity. Default 1 if not stated."},
-                    "unit": {"type": "string", "description": "Unit: kg, g, ml, L, unit, pcs, lbs, packet."},
-                    "total_price": {"type": "number", "description": "Final billed price for this line item."}
-                },
-                "required": ["name", "quantity", "unit", "total_price"]
-            }
-        },
-        "taxes": {
-            "type": "object",
-            "description": "Statutory tax data only. Never put taxes in the items array.",
-            "properties": {
-                "CGST": {"type": "number", "description": "Central GST amount. 0 if absent."},
-                "SGST": {"type": "number", "description": "State GST amount. 0 if absent."},
-                "IGST": {"type": "number", "description": "Integrated GST amount. 0 if absent."}
-            },
-            "required": ["CGST", "SGST", "IGST"]
-        },
-        "subtotal": {"type": "number", "description": "Pre-tax total of all grocery items."},
-        "grandTotal": {"type": "number", "description": "Final amount paid including all taxes."}
-    },
-    "required": ["storeName", "items", "taxes", "subtotal", "grandTotal"]
+# (Schema dict removed during cleanup)
+RECEIPT_EXTRACTION_PROMPT = """
+You are an expert grocery receipt analyst and product categorizer.
+
+Analyze this receipt image and extract every line item. For EACH item, classify it using the taxonomy below.
+
+## CATEGORY TAXONOMY (use EXACTLY these values)
+
+PRIMARY CATEGORIES:
+- PRODUCE          → Fresh fruits and vegetables
+- MEAT_SEAFOOD     → All raw/fresh meat, poultry, fish, shellfish  
+- DAIRY_EGGS       → Milk, cheese, yogurt, butter, cream, eggs
+- FROZEN           → Frozen meals, frozen meat, ice cream, frozen veg
+- BAKERY           → Bread, buns, cakes, pastries, cookies (fresh/unpackaged)
+- BEVERAGES        → Juice, soda, water, tea, coffee, alcohol, energy drinks
+- PANTRY_DRY       → Rice, pasta, flour, sugar, lentils, canned goods, oils, spices
+- SNACKS           → Chips, crackers, packaged cookies, candy, nuts (packaged)
+- CONDIMENTS       → Ketchup, sauces, dressings, pickles, spreads, jams
+- HOUSEHOLD        → Cleaning products, detergents, paper goods, trash bags
+- PERSONAL_CARE    → Soap, shampoo, toothpaste, cosmetics, hygiene products
+- CLOTHING         → Any apparel, footwear, accessories, fabric items
+- ELECTRONICS      → Gadgets, batteries, cables, light bulbs, small appliances
+- MEDICATIONS      → Medicines, vitamins, supplements, first aid
+- BABY_PRODUCTS    → Baby food, diapers, baby care items
+- PET_SUPPLIES     → Pet food, pet care products
+- OTHER            → Anything that does not fit above
+
+SUB-CATEGORY EXAMPLES (infer the best sub-category):
+- PRODUCE:        leafy_greens, root_vegetables, tomatoes_peppers, tropical_fruits, citrus_fruits, berries, mushrooms, herbs
+- MEAT_SEAFOOD:   poultry, red_meat, pork, seafood_fish, seafood_shellfish, processed_deli, eggs_in_meat_section
+- DAIRY_EGGS:     milk, hard_cheese, soft_cheese, yogurt, butter_cream, eggs
+- FROZEN:         frozen_meat, frozen_meals, ice_cream, frozen_vegetables, frozen_seafood
+- BEVERAGES:      juice_fresh, juice_packed, soda_carbonated, water, alcohol_beer, alcohol_spirits, hot_beverage
+
+DIETARY FLAGS (assign the MOST specific that applies):
+- VEG          → Vegetarian, plant-based, no meat/seafood/eggs
+- VEGAN        → Fully plant-based, no animal products at all  
+- NON_VEG      → Contains meat (chicken, mutton, beef, pork, etc.)
+- SEAFOOD      → Fish or shellfish (some consider veg, so separate)
+- DAIRY        → Contains milk/cheese/yogurt (no meat)
+- EGG          → Contains eggs (no meat/dairy)
+- MIXED        → Contains multiple animal products
+- NA           → Non-food item (household, clothing, electronics)
+
+## OUTPUT FORMAT
+
+Return ONLY a valid JSON object. No markdown, no explanation, no extra text.
+
+{
+  "receipt_meta": {
+    "store_name": "string or null",
+    "receipt_date": "YYYY-MM-DD or null",
+    "subtotal": 0.0,
+    "taxes": 0.0,
+    "grand_total": 0.0,
+    "currency": "INR"
+  },
+  "items": [
+    {
+      "item_name": "exact name from receipt",
+      "normalized_name": "clean generic name (e.g. 'chicken breast' not 'PREMIUM CHKN BRST 500G')",
+      "brand": "brand name if visible, else null",
+      "category": "PRIMARY_CATEGORY from taxonomy",
+      "sub_category": "sub_category value",
+      "dietary_flag": "dietary flag value",
+      "is_perishable": true,
+      "is_packed_product": true,
+      "quantity": 1.0,
+      "unit": "unit",
+      "unit_price": 0.0,
+      "total_price": 0.0,
+      "gemini_confidence": 1.0
+    }
+  ]
 }
-
-GEMINI_META_PROMPT = """You are an expert data extraction agent specializing in Indian retail and grocery receipts.
-Your task: deeply analyze the provided receipt image and extract transactional data with perfect accuracy.
-
-CRITICAL EXTRACTION PROTOCOLS:
-1. ENTITY DECOMPOSITION: Deconstruct complex product strings.
-   - 'Tata Salt 1kg' → name='Tata Salt', quantity=1, unit='kg'
-   - 'Amul Milk 500ml' → name='Amul Milk', quantity=500, unit='ml'
-   - Strip ALL weights, volumes, sizes, container types from the 'name' field.
-2. STRICT TAX ISOLATION: CGST, SGST, IGST, VAT, Cess, and 'Rounding Off' must NEVER
-   appear in the 'items' array. Place them exclusively in the 'taxes' object.
-   If a specific tax is absent, set its value to 0.
-3. HALLUCINATION PREVENTION: Ignore creases, folds, smudges, barcodes, logos,
-   and watermarks. Do NOT invent data. Extract only clear transactional text.
-4. INFERENTIAL DEFAULTS: If a grocery product has no explicit quantity, default
-   quantity=1 and unit='unit'.
-5. PRICE PRECISION: If a receipt shows both unit price and total price on the same
-   line, use the TOTAL price for 'total_price'.
-
-Return the data strictly conforming to the requested JSON schema."""
+"""
 
 
-async def extract_receipt_with_gemini(image_bytes: bytes, mime_type: str) -> dict:
-    """Call Gemini with constrained JSON schema to extract structured receipt data."""
+async def extract_receipt_with_gemini(raw_ocr_text: str) -> dict:
+    """
+    Client-Side OCR + Backend LLM pipeline:
+      Stage 1 — Executed in browser natively via ONNX
+      Stage 2 — Gemini text-only: Semantically structure the raw text into JSON.
+    """
     if not _gemini_client:
         raise RuntimeError("Gemini client is not initialized. Set GEMINI_API_KEY.")
 
-    # Resize to max 1600px on longest edge to reduce token cost
-    img = Image.open(io.BytesIO(image_bytes))
-    max_edge = 1600
-    if max(img.width, img.height) > max_edge:
-        ratio = max_edge / max(img.width, img.height)
-        img = img.resize((int(img.width * ratio), int(img.height * ratio)), Image.LANCZOS)
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=90)
-        image_bytes = buf.getvalue()
-        mime_type = "image/jpeg"
+    if not raw_ocr_text.strip():
+        raise ValueError("Provided OCR text is empty.")
 
-    model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    # ---------------------------------------------------------------------------
+    # Stage 2: Gemini text-only — processes text tokens, not image tokens (~1-3s)
+    # ---------------------------------------------------------------------------
+    logger.info(f"Stage 2: Sending {len(raw_ocr_text)} chars of OCR text to Gemini...")
+    model_name = os.getenv("GEMINI_MODEL_OCR", os.getenv("GEMINI_MODEL", "gemini-3.1-pro"))
 
-    response = await _gemini_client.aio.models.generate_content(
+    # Embed raw OCR text directly into the prompt
+    full_prompt = f"{RECEIPT_EXTRACTION_PROMPT}\n\nRAW OCR TEXT:\n{raw_ocr_text}"
+
+    response = await call_gemini_with_retry(lambda: _gemini_client.aio.models.generate_content(
         model=model_name,
-        contents=[
-            GEMINI_META_PROMPT,
-            genai_types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-        ],
+        contents=full_prompt,
         config=genai_types.GenerateContentConfig(
             response_mime_type="application/json",
-            response_schema=RECEIPT_SCHEMA,
             temperature=0.1,
-            top_p=0.8,
-            top_k=10,
         )
-    )
+    ))
     return json.loads(response.text)
 
 
+
 # ---------------------------------------------------------------------------
-# Receipt Upload Endpoint  (image → Gemini → MongoDB)
+# Direct Image Upload Endpoint (Image → Gemini Flash Vision → MongoDB)
 # ---------------------------------------------------------------------------
-@app.post("/api/receipts/upload", tags=["Receipts"])
-async def upload_receipt(file: UploadFile = File(...)):
+@app.post("/api/receipts/upload-image", tags=["Receipts"])
+async def upload_receipt_image(
+    file: UploadFile = File(...), 
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+    user_id: str = Depends(get_current_user)
+):
     """
-    Accept a raw receipt image, extract structured data via Gemini 1.5 Flash
-    (strict JSON schema / constrained decoding), and persist to MongoDB.
+    Accept an image file, extract structured data via Gemini Vision,
+    apply expiry rules locally, and persist to MongoDB concurrently.
     """
     if not _gemini_client:
         raise HTTPException(503, "Gemini API key is not configured on the server.")
 
-    now = datetime.utcnow().isoformat()
-
-    # 1. Read uploaded bytes
+    now = datetime.utcnow()
     image_bytes = await file.read()
-    mime_type = file.content_type or "image/jpeg"
+    
+    # validate_receipt_file Logic
+    if len(image_bytes) > 10 * 1024 * 1024:
+        raise HTTPException(413, "File too large. Maximum size is 10MB.")
+    if file.content_type not in ["image/jpeg", "image/png", "image/webp", "application/pdf"]:
+        raise HTTPException(415, "Unsupported media type. Only JPEG, PNG, WEBP, and PDF are allowed.")
 
-    # 2. Extract with Gemini VLM
     try:
-        extracted = await extract_receipt_with_gemini(image_bytes, mime_type)
-        logger.info(f"Gemini extracted {len(extracted.get('items', []))} items from receipt.")
+        logger.info(f"Sending image ({len(image_bytes)} bytes) to Gemini Vision...")
+        image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=file.content_type or "image/jpeg")
+        model_name = os.getenv("GEMINI_MODEL_OCR", os.getenv("GEMINI_MODEL", "gemini-3.1-pro"))
+        
+        response = await call_gemini_with_retry(lambda: _gemini_client.aio.models.generate_content(
+            model=model_name,
+            contents=[RECEIPT_EXTRACTION_PROMPT, image_part],
+            config=genai_types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.1,
+            )
+        ))
+        extracted = json.loads(response.text)
+        logger.info(f"Gemini extracted {len(extracted.get('items', []))} items from receipt image.")
     except Exception as e:
-        logger.error(f"Gemini extraction failed: {e}")
+        logger.error(f"Gemini Vision extraction failed: {e}")
         raise HTTPException(500, f"AI extraction failed: {str(e)}")
 
-    store_name  = extracted.get("storeName", "Unknown Store")
-    grand_total = float(extracted.get("grandTotal") or 0.0)
-    subtotal    = float(extracted.get("subtotal") or 0.0)
-    taxes       = extracted.get("taxes", {"CGST": 0, "SGST": 0, "IGST": 0})
-    items       = extracted.get("items", [])
+    receipt_meta = extracted.get("receipt_meta", {})
+    store_name  = receipt_meta.get("store_name", "Unknown Store")
+    grand_total = float(receipt_meta.get("grand_total") or 0.0)
+    subtotal    = float(receipt_meta.get("subtotal") or 0.0)
+    # the new prompt puts taxes as a single float, but our DB expects dict. we'll just store the dict or adjust it
+    taxes       = receipt_meta.get("taxes", 0.0)
+    if isinstance(taxes, (int, float)):
+        taxes = {"total_tax": taxes}
+        
+    items = extracted.get("items", [])
 
-    # 3. Persist receipt document
-    await db_service.insert_one("receipts", {
+    db_tasks = []
+
+    receipt_doc_id = str(ObjectId())
+    db_tasks.append(_db_service.insert_one("receipts", {
+        "_id": ObjectId(receipt_doc_id),
+        "user_id": user_id,
         "store": store_name,
-        "date": now,
+        "date": now.isoformat(),
         "total": grand_total,
         "subtotal": subtotal,
         "taxes": taxes,
         "item_count": len(items),
         "status": "processed",
-        "engine": "gemini-vision"
-    })
+        "engine": "gemini-vision-flash"
+    }))
 
-    # 4. Persist financial ledger entry
     if grand_total > 0:
-        await db_service.insert_one("financial_ledger", {
-            "date": now,
+        db_tasks.append(_db_service.insert_one("financial_ledger", {
+            "user_id": user_id,
+            "date": now.isoformat(),
             "amount": grand_total,
             "category": "Groceries",
             "description": f"Receipt from {store_name}",
             "type": "expense"
-        })
+        }))
 
-    # 5. Persist inventory items
+    inventory_items = []
+    packed_item_ids = []
+    packed_item_names = []
+    
     for item in items:
         qty   = float(item.get("quantity") or 1)
         price = float(item.get("total_price") or 0.0)
-        await db_service.insert_one("inventory", {
-            "name": str(item.get("name", "Unknown"))[:60],
-            "category": "Groceries",
+        
+        category = item.get("category", "OTHER")
+        sub_category = item.get("sub_category", "default")
+        is_packed_product = item.get("is_packed_product", False)
+        
+        expiry_data = calculate_expiry_dates(
+            category=category,
+            sub_category=sub_category,
+            purchase_date=now,
+            is_packed_product=is_packed_product
+        )
+        
+        status = get_item_status(expiry_data["safe_expiry_date"])
+        
+        item_id = str(ObjectId())
+        
+        inventory_items.append({
+            "_id": ObjectId(item_id),
+            "user_id": user_id,
+            "name": str(item.get("item_name", "Unknown"))[:60],
+            "normalized_name": item.get("normalized_name"),
+            "brand": item.get("brand"),
+            "category": category,
+            "sub_category": sub_category,
+            "dietary_flag": item.get("dietary_flag", "NA"),
+            "is_perishable": item.get("is_perishable", False),
+            "is_packed_product": is_packed_product,
             "quantity": qty,
             "unit": str(item.get("unit", "unit")),
             "cost_per_unit": round(price / qty, 2) if qty > 0 else price,
             "store": store_name,
-            "status": "fresh",
-            "purchase_date": now,
-            "created_at": now
+            "status": status,
+            "purchase_date": now.isoformat(),
+            "created_at": now.isoformat(),
+            "shelf_life_days": expiry_data["shelf_life_days"],
+            "safe_days": expiry_data["safe_days"],
+            "safety_factor_applied": expiry_data.get("safety_factor_applied"),
+            "expiry_date": expiry_data["expiry_date"].isoformat() if expiry_data["expiry_date"] else None,
+            "safe_expiry_date": expiry_data["safe_expiry_date"].isoformat() if expiry_data["safe_expiry_date"] else None,
+            "storage_note": expiry_data["storage_note"],
+            "track_as_warranty": expiry_data["track_as_warranty"],
+            "source": "receipt_scan",
+            "consumed_quantity": 0,
+            "is_consumed": False,
+            "enrichment_status": "pending" if is_packed_product else "n/a"
         })
+        
+        if is_packed_product and item.get("normalized_name"):
+            packed_item_ids.append(ObjectId(item_id))
+            packed_item_names.append(item.get("normalized_name"))
+
+    if inventory_items:
+        db_tasks.append(_db_service.insert_many("inventory", inventory_items))
+
+    await asyncio.gather(*db_tasks)
+    
+    # Launch AI tasks for each newly added inventory item
+    for inv_item in inventory_items:
+        _id_str = str(inv_item["_id"])
+        name_str = inv_item["name"]
+        cat_str = inv_item["category"]
+        
+        # 1. Image generation
+        background_tasks.add_task(_generate_single_item_image, _id_str, name_str)
+        
+        # 2. Auto-categorize generic items
+        generic_cats = ["Groceries", "OTHER", "Other", "Produce", "Dairy", "Grains", "Spices", "Meat", "Beverages", "Cooking"]
+        if cat_str in generic_cats:
+            background_tasks.add_task(_categorize_single_item, _id_str, name_str)
+            
+        # 3. Auto-estimate expiry if missing
+        if not inv_item.get("expiry_date"):
+            background_tasks.add_task(_estimate_single_item_expiry, _id_str, name_str, cat_str)
+    
+    if packed_item_ids:
+        background_tasks.add_task(
+            enrich_packed_items_background,
+            _db_service.db, packed_item_ids, packed_item_names
+        )
 
     return {
         "status": "success",
-        "message": f"Gemini Vision extracted {len(items)} items from receipt.",
+        "message": f"Gemini extracted {len(items)} items from receipt.",
+        "extracted_items": [{**inv, "_id": str(inv["_id"])} for inv in inventory_items],
         "extracted_data": {
             "store": store_name,
             "subtotal": subtotal,
@@ -289,72 +481,340 @@ async def upload_receipt(file: UploadFile = File(...)):
         }
     }
 
-
-# ---------------------------------------------------------------------------
-# Pydantic Models
-# ---------------------------------------------------------------------------
-class InventoryItem(BaseModel):
-    name: str
-    category: str
-    quantity: float
-    unit: str
-    purchase_date: str | None = None
-    expiry_date: str | None = None
-    status: str = "fresh"
-    cost_per_unit: float = 0
-    store: str = ""
-
-
-class ChatMessage(BaseModel):
-    message: str
+# Imported from schemas.requests
 
 
 @app.post("/api/chat", tags=["Agent"])
-async def chat(body: ChatMessage):
+async def chat(body: ChatRequest, user_id: str = Depends(get_current_user)):
     """
-    Send a natural language message to the PantryMind Root Orchestrator.
-    Currently returns a mock echo response until agent integration is wired.
+    Send a natural language message to the PantryMind AI.
+    Gemini translates the query into MongoDB operations, executes them,
+    and returns a human-readable answer.
     """
+    if not _gemini_client:
+        raise HTTPException(503, "Gemini API key is not configured.")
+
+    session_id = body.session_id or f"sess_{uuid4().hex[:12]}"
+    chat_model = os.getenv("GEMINI_MODEL_CHAT", os.getenv("GEMINI_MODEL", "gemini-3.1-pro"))
+    chat_service = ChatService(_db_service, _gemini_client, model_name=chat_model, user_id=user_id)
+
+    try:
+        reply, metadata = await chat_service.process_message(
+            session_id=session_id,
+            user_message=body.message,
+        )
+    except Exception as e:
+        logger.error(f"Chat processing failed: {e}")
+        raise HTTPException(500, f"Chat failed: {str(e)}")
+
     return {
         "status": "ok",
-        "user_message": body.message,
-        "reply": f"[PantryMind] I received your message: '{body.message}'. "
-                 "Agent integration is pending -- this is a mock response.",
+        "reply": reply,
+        "session_id": session_id,
+        "metadata": metadata,
     }
+
+
+@app.get("/api/chat/history/{session_id}", tags=["Agent"])
+async def get_chat_history(session_id: str, limit: int = 50, user_id: str = Depends(get_current_user)):
+    """Retrieve conversation history for a session."""
+    messages = await _db_service.find(
+        "conversation_history",
+        {"session_id": session_id, "user_id": user_id},
+        limit=limit,
+        sort=[("timestamp", 1)],
+    )
+    return {"session_id": session_id, "messages": messages}
+
+# --- Kitchen Chat API ---
+class KitchenChatRequest(BaseModel):
+    message: str
+    session_id: str
+    
+
+@app.post("/api/kitchen/chat")
+async def handle_kitchen_chat(request: KitchenChatRequest, user_id: str = Depends(get_current_user)):
+    if not kitchen_chat_service:
+        raise HTTPException(status_code=500, detail="Kitchen Chat Service not initialized")
+    try:
+        reply, metadata = await kitchen_chat_service.process_message(
+            session_id=request.session_id,
+            user_id=user_id,
+            user_message=request.message
+        )
+        return {"reply": reply, "metadata": metadata}
+    except Exception as e:
+        logger.error(f"Kitchen Chat API Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/kitchen/chat/history/{session_id}")
+async def get_kitchen_chat_history(session_id: str):
+    if not kitchen_chat_service:
+        raise HTTPException(status_code=500, detail="Kitchen Chat Service not initialized")
+    try:
+        history = await kitchen_chat_service.load_history(session_id, limit=50)
+        return {"history": history}
+    except Exception as e:
+        logger.error(f"Kitchen Chat History Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/kitchen/voice")
+async def handle_kitchen_voice(
+    session_id: str = Form(...),
+    audio: UploadFile = File(...),
+    user_id: str = Depends(get_current_user)
+):
+    if not kitchen_chat_service:
+        raise HTTPException(status_code=500, detail="Kitchen Chat Service not initialized")
+    try:
+        audio_bytes = await audio.read()
+        mime_type = audio.content_type or "audio/webm"
+        
+        reply, metadata, audio_b64 = await kitchen_chat_service.process_voice_message(
+            session_id=session_id,
+            user_id=user_id,
+            audio_bytes=audio_bytes,
+            mime_type=mime_type
+        )
+        return {"reply": reply, "audio_base64": audio_b64, "metadata": metadata}
+    except Exception as e:
+        logger.error(f"Kitchen Voice API Error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.websocket("/api/kitchen/live")
+async def kitchen_live_agent(websocket: WebSocket):
+    await websocket.accept()
+    if not kitchen_chat_service:
+        await websocket.close(code=1011, reason="Kitchen Chat Service not initialized")
+        return
+
+    session_id = "default_session"
+    user_id = websocket.headers.get("x-user-id") or DEMO_USER_ID
+
+    try:
+        await kitchen_chat_service.handle_live_session(websocket, session_id, user_id)
+    except WebSocketDisconnect:
+        logger.info(f"WebSocket disconnected for session {session_id}")
+    except Exception as e:
+        logger.error(f"Live API WebSocket error: {e}", exc_info=True)
+        try:
+            await websocket.close(code=1011, reason=str(e))
+        except:
+            pass
+
+@app.websocket("/api/voice/live")
+async def global_voice_live_agent(websocket: WebSocket):
+    await websocket.accept()
+    if not global_voice_service:
+        await websocket.close(code=1011, reason="Global Voice Service not initialized")
+        return
+
+    session_id = "global_voice_" + str(uuid4())[:8]
+    user_id = websocket.headers.get("x-user-id") or DEMO_USER_ID
+
+    try:
+        await global_voice_service.handle_live_session(websocket, session_id, user_id)
+    except WebSocketDisconnect:
+        logger.info(f"Global Voice WebSocket disconnected for session {session_id}")
+    except Exception as e:
+        logger.error(f"Global Live API WebSocket error: {e}", exc_info=True)
+        try:
+            await websocket.close(code=1011, reason=str(e))
+        except:
+            pass
+
+# ---------------------------------------------------------------------------
+# AI Background Helpers (Category Agent + Expiry Agent)
+# ---------------------------------------------------------------------------
+async def _categorize_single_item(item_id: str, item_name: str):
+    """Background task: classify a single item via Gemini Flash."""
+    if not _gemini_client:
+        return
+    try:
+        prompt = f"""Classify this grocery item into one category.
+
+Item: "{item_name}"
+
+Categories: PRODUCE, MEAT_SEAFOOD, DAIRY_EGGS, FROZEN, BAKERY, BEVERAGES, PANTRY_DRY, SNACKS, CONDIMENTS, HOUSEHOLD, PERSONAL_CARE, OTHER
+
+Return JSON: {{"category": "...", "sub_category": "...", "dietary_flag": "VEG|NON_VEG|SEAFOOD|DAIRY|NA", "is_perishable": true|false}}"""
+
+        model_name = os.getenv("GEMINI_MODEL", "gemini-3.1-pro")
+        response = await call_gemini_with_retry(lambda: _gemini_client.aio.models.generate_content(
+            model=model_name,
+            contents=prompt,
+            config=genai_types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.1,
+            )
+        ))
+        cls = json.loads(response.text)
+        await _db_service.update_one(
+            "inventory",
+            {"_id": ObjectId(item_id)},
+            {"$set": {
+                "category": cls.get("category", "OTHER"),
+                "sub_category": cls.get("sub_category", "default"),
+                "dietary_flag": cls.get("dietary_flag", "NA"),
+                "is_perishable": cls.get("is_perishable", False),
+            }}
+        )
+        logger.info(f"Auto-categorized '{item_name}' → {cls.get('category')}")
+    except Exception as e:
+        logger.warning(f"Auto-categorize failed for '{item_name}': {e}")
+
+
+async def _estimate_single_item_expiry(item_id: str, item_name: str, category: str):
+    """Background task: estimate expiry for a single item via Gemini."""
+    if not _gemini_client:
+        return
+    try:
+        is_packed = category in ["PANTRY_DRY", "SNACKS", "BEVERAGES", "CONDIMENTS", "FROZEN"]
+        result = await estimate_expiry_with_ai(_gemini_client, item_name, category, is_packed)
+
+        remaining = result.get("remaining_days")
+        if remaining and remaining > 0:
+            now = datetime.utcnow()
+            expiry_date = now + timedelta(days=remaining)
+            safe_factor = 0.75 if is_packed else 0.50
+            safe_days = int(remaining * safe_factor)
+            safe_expiry = now + timedelta(days=safe_days)
+
+            status = get_item_status(safe_expiry)
+
+            await _db_service.update_one(
+                "inventory",
+                {"_id": ObjectId(item_id)},
+                {"$set": {
+                    "expiry_date": expiry_date.isoformat(),
+                    "safe_expiry_date": safe_expiry.isoformat(),
+                    "shelf_life_days": result.get("total_shelf_life_days", remaining),
+                    "safe_days": safe_days,
+                    "status": status,
+                    "storage_note": result.get("storage_tip", ""),
+                    "expiry_source": "ai_estimated",
+                    "expiry_confidence": result.get("confidence", 0),
+                    "expiry_reasoning": result.get("reasoning", ""),
+                }}
+            )
+            logger.info(f"AI estimated expiry for '{item_name}': {remaining} days (safe: {safe_days} days)")
+    except Exception as e:
+        logger.warning(f"Expiry estimation background task failed for '{item_name}': {e}")
+
+
+async def _generate_single_item_image(item_id: str, item_name: str):
+    """Background task: generate image for a single item via Gemini."""
+    try:
+        from services.image_service import assign_product_image
+        await assign_product_image(_db_service, _gemini_client, item_id, item_name)
+    except Exception as e:
+        logger.warning(f"Image generation background task failed for '{item_name}': {e}")
+
+
+image_agent_status = {
+    "state": "monitoring",
+    "item": None
+}
+
+async def image_generation_daemon():
+    """Background loop to continuously monitor the pantry and generate images one by one."""
+    logger.info("Image generation daemon started.")
+    global image_agent_status
+    while True:
+        try:
+            if not _gemini_client:
+                await asyncio.sleep(15)
+                continue
+                
+            # Find an item that lacks an image_url
+            item = await _db_service.find_one(
+                "inventory",
+                {"$or": [{"image_url": None}, {"image_url": {"$exists": False}}]}
+            )
+            if item and item.get("name"):
+                logger.info(f"Daemon picked up missing image for '{item['name']}'")
+                image_agent_status["state"] = "generating"
+                image_agent_status["item"] = item["name"]
+                
+                await _generate_single_item_image(str(item["_id"]), item["name"])
+                
+                # Wait 5 seconds between creations to avoid rate limits
+                await asyncio.sleep(5)
+            else:
+                image_agent_status["state"] = "monitoring"
+                image_agent_status["item"] = None
+                # Sleep longer if nothing to do
+                await asyncio.sleep(15)
+        except asyncio.CancelledError:
+            logger.info("Image generation daemon cancelled.")
+            image_agent_status["state"] = "offline"
+            image_agent_status["item"] = None
+            break
+        except Exception as e:
+            logger.error(f"Image generation daemon error: {e}")
+            image_agent_status["state"] = "error"
+            image_agent_status["item"] = None
+            await asyncio.sleep(15)
+
+@app.get("/api/system/agent-status", tags=["System"])
+async def get_agent_status():
+    """Get the current live status of the background monitoring agent."""
+    return image_agent_status
+
 
 
 # ---------------------------------------------------------------------------
 # Inventory Endpoints (REST fallback for frontend)
 # ---------------------------------------------------------------------------
 @app.get("/api/inventory", tags=["Inventory"])
-async def get_inventory(category: str | None = None):
+async def get_inventory(category: str | None = None, user_id: str = Depends(get_current_user)):
     """Retrieve current inventory, optionally filtered by category."""
-    query = {}
+    query = {"quantity": {"$gt": 0}, "user_id": user_id}
     if category:
         query["category"] = category
-    items = await db_service.find("inventory", query)
+    items = await _db_service.find("inventory", query)
     return {"items": items, "count": len(items)}
 
 
 @app.post("/api/inventory", tags=["Inventory"])
-async def add_inventory_item(item: InventoryItem):
+async def add_inventory_item(
+    item: InventoryItemRequest, 
+    background_tasks: BackgroundTasks,
+    user_id: str = Depends(get_current_user)
+):
     """Add a new item to the inventory."""
     doc = item.model_dump()
     doc["created_at"] = datetime.utcnow().isoformat()
-    inserted_id = await db_service.insert_one("inventory", doc)
+    inserted_id = await _db_service.insert_one("inventory", doc)
     doc["_id"] = inserted_id
+
+    # Auto-categorize if generic category
+    generic_cats = ["Groceries", "OTHER", "Other", "Produce", "Dairy", "Grains", "Spices", "Meat", "Beverages", "Cooking"]
+    if item.category in generic_cats:
+        background_tasks.add_task(_categorize_single_item, inserted_id, item.name)
+
+    # Auto-estimate expiry if not provided
+    if not item.expiry_date:
+        background_tasks.add_task(_estimate_single_item_expiry, str(inserted_id), item.name, item.category)
+
+    # Note: Image generation is now handled automatically by the background daemon
+
     return {"status": "created", "item": doc}
 
 
 @app.put("/api/inventory/{item_id}", tags=["Inventory"])
-async def update_inventory_item(item_id: str, item: InventoryItem):
+async def update_inventory_item(
+    item_id: str, 
+    item: InventoryItemRequest,
+    user_id: str = Depends(get_current_user)
+):
     """Update an existing inventory item by its ObjectId."""
     try:
         oid = ObjectId(item_id)
     except Exception:
         raise HTTPException(400, "Invalid item ID format.")
 
-    modified = await db_service.update_one(
+    modified = await _db_service.update_one(
         "inventory",
         {"_id": oid},
         {"$set": item.model_dump()},
@@ -365,31 +825,129 @@ async def update_inventory_item(item_id: str, item: InventoryItem):
 
 
 @app.delete("/api/inventory/{item_id}", tags=["Inventory"])
-async def delete_inventory_item(item_id: str):
+async def delete_inventory_item(item_id: str, user_id: str = Depends(get_current_user)):
     """Delete an inventory item by its ObjectId."""
     try:
         oid = ObjectId(item_id)
     except Exception:
         raise HTTPException(400, "Invalid item ID format.")
 
-    deleted = await db_service.delete_one("inventory", {"_id": oid})
+    deleted = await _db_service.delete_one("inventory", {"_id": oid, "user_id": user_id})
     if deleted == 0:
         raise HTTPException(404, "Item not found.")
     return {"status": "deleted", "item_id": item_id}
 
 
+class BulkDeleteRequest(BaseModel):
+    item_ids: list[str]
+
+class TransactionRequest(BaseModel):
+    amount: float
+    category: str
+    description: str
+    type: str = "expense" # income or expense
+
+class ShoppingOrderItem(BaseModel):
+    name: str
+    quantity: float | str = 1
+    unit: str | None = None
+    category: str | None = "PANTRY_DRY"
+    reason: str | None = None
+    estimated_cost: float | None = None
+    estimated_price: float | None = None
+
+class ShoppingOrderRequest(BaseModel):
+    items: list[ShoppingOrderItem]
+    source: str = "voice_workspace"
+
+
+@app.post("/api/inventory/bulk-delete", tags=["Inventory"])
+async def bulk_delete_inventory_items(req: BulkDeleteRequest, user_id: str = Depends(get_current_user)):
+    """Delete multiple inventory items by their ObjectIds."""
+    try:
+        oids = [ObjectId(item_id) for item_id in req.item_ids]
+    except Exception:
+        raise HTTPException(400, "Invalid item ID format in list.")
+
+    deleted = await _db_service.delete_many("inventory", {"_id": {"$in": oids}, "user_id": user_id})
+    return {"status": "deleted", "deleted_count": deleted}
+
+
+@app.post("/api/shopping/simulate-order", tags=["Shopping"])
+async def simulate_shopping_order(req: ShoppingOrderRequest, user_id: str = Depends(get_current_user)):
+    """
+    Simulate an external grocery order after explicit user approval.
+    The simulator adds items to inventory and writes the exact amount into
+    financial_ledger so Insights and finance agents can see it immediately.
+    """
+    if not req.items:
+        raise HTTPException(400, "No items were provided for ordering.")
+
+    raw_db = _db_service.db if hasattr(_db_service, "db") else _db_service
+    items = [item.model_dump(exclude_none=True) for item in req.items]
+    result = await simulate_platform_order(raw_db, user_id, items)
+    if not result.get("success"):
+        raise HTTPException(500, result.get("error") or "Order simulation failed.")
+
+    return {
+        "status": "ordered",
+        "source": req.source,
+        "order": result,
+        "finance": {
+            "category": "Groceries",
+            "amount": result.get("total_amount", 0),
+            "ledger_id": result.get("ledger_id"),
+        },
+    }
+
+
 @app.post("/api/inventory/consume", tags=["Inventory"])
 async def consume_item(
+    user_id: str = Depends(get_current_user),
     item_name: str = Form(...),
     quantity: float = Form(1.0),
 ):
-    """Mark an item as consumed -- decrements inventory and logs to history."""
-    # TODO: Wire to Inventory Agent
+    """Mark an item as consumed — decrements inventory and logs to history."""
+    import re
+    escaped_words = [re.escape(w) for w in item_name.split()]
+    regex_pattern = "".join([f"(?=.*{w})" for w in escaped_words])
+
+    # Find the item using word-independent search
+    items = await _db_service.find(
+        "inventory",
+        {"name": {"$regex": regex_pattern, "$options": "i"}, "user_id": user_id},
+        limit=1,
+    )
+    if not items:
+        raise HTTPException(404, f"Item '{item_name}' not found in inventory.")
+
+    item = items[0]
+    new_qty = max(0, float(item.get("quantity", 0)) - quantity)
+
+    # Update quantity
+    await _db_service.update_one(
+        "inventory",
+        {"_id": ObjectId(item["_id"]), "user_id": user_id},
+        {"$set": {"quantity": new_qty}},
+    )
+
+    # Log to consumption history
+    now = datetime.now(timezone.utc)
+    month_key = now.strftime("%Y-%m")
+    await _db_service.insert_one("consumption_history", {
+        "item_name": item.get("name", item_name),
+        "user_id": user_id,
+        "month_key": month_key,
+        "consumed_qty": quantity,
+        "date": now.isoformat(),
+    })
+
     return {
         "status": "consumed",
-        "item_name": item_name,
-        "quantity": quantity,
-        "message": "Consumption logged. Inventory updated.",
+        "item_name": item.get("name", item_name),
+        "user_id": user_id,
+        "quantity_consumed": quantity,
+        "remaining": new_qty,
     }
 
 
@@ -397,34 +955,33 @@ async def consume_item(
 # Dashboard Stats
 # ---------------------------------------------------------------------------
 @app.get("/api/dashboard/stats", tags=["Dashboard"])
-async def get_dashboard_stats():
-    """Aggregate dashboard statistics from multiple collections."""
-    # Total inventory count
-    all_items = await db_service.find("inventory", {})
-    total_items = len(all_items)
-
-    # Items expiring soon
-    expiring_items = await db_service.find("inventory", {"status": "expiring"})
-    expiring_soon = len(expiring_items)
-
-    # Monthly spending from financial_ledger (current month)
+async def get_dashboard_stats(user_id: str = Depends(get_current_user)):
+    """Aggregate dashboard statistics from multiple collections in parallel."""
     now = datetime.utcnow()
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     pipeline = [
-        {"$match": {"date": {"$gte": month_start.isoformat()}}},
+        {"$match": {"date": {"$gte": month_start.isoformat()}, "user_id": user_id}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}},
     ]
-    agg_result = await db_service.aggregate("financial_ledger", pipeline)
-    monthly_spending = agg_result[0]["total"] if agg_result else 0
 
-    # Recent receipts (last 3)
-    recent_receipts = await db_service.find(
-        "receipts", {}, limit=3, sort=[("date", -1)]
+    # Run queries concurrently
+    total_items_task = _db_service.count_documents("inventory", {"user_id": user_id})
+    expiring_items_task = _db_service.find("inventory", {"status": "expiring", "user_id": user_id})
+    monthly_spending_task = _db_service.aggregate("financial_ledger", pipeline)
+    recent_receipts_task = _db_service.find("receipts", {"user_id": user_id}, limit=3, sort=[("date", -1)])
+
+    total_items, expiring_items, agg_result, recent_receipts = await asyncio.gather(
+        total_items_task,
+        expiring_items_task,
+        monthly_spending_task,
+        recent_receipts_task,
     )
+
+    monthly_spending = agg_result[0]["total"] if agg_result else 0
 
     return {
         "total_items": total_items,
-        "expiring_soon": expiring_soon,
+        "expiring_soon": len(expiring_items),
         "monthly_spending": monthly_spending,
         "recent_receipts": recent_receipts,
         "expiring_items": expiring_items,
@@ -435,22 +992,63 @@ async def get_dashboard_stats():
 # Receipts
 # ---------------------------------------------------------------------------
 @app.get("/api/receipts", tags=["Receipts"])
-async def get_receipts():
+async def get_receipts(user_id: str = Depends(get_current_user)):
     """Return all receipts sorted by date descending."""
-    receipts = await db_service.find(
-        "receipts", {}, sort=[("date", -1)]
+    receipts = await _db_service.find(
+        "receipts", {"user_id": user_id}, sort=[("date", -1)]
     )
     return {"receipts": receipts, "count": len(receipts)}
 
 
 # ---------------------------------------------------------------------------
+# Finance — AI Chat Agent (Flash Lite)
+# ---------------------------------------------------------------------------
+@app.post("/api/finance/chat", tags=["Finance"])
+async def finance_chat(body: ChatRequest, user_id: str = Depends(get_current_user)):
+    """
+    Send a natural language finance question to the PantryMind Finance Agent.
+    Uses Gemini Flash Lite for cost-efficient structured financial queries.
+    """
+    if not finance_chat_service:
+        raise HTTPException(503, "Finance chat service is not initialized.")
+
+    session_id = body.session_id or f"fin_{uuid4().hex[:12]}"
+
+    try:
+        reply, metadata = await finance_chat_service.process_message(
+            session_id=session_id,
+            user_message=body.message,
+            user_id=user_id
+        )
+    except Exception as e:
+        logger.error(f"Finance chat failed: {e}")
+        raise HTTPException(500, f"Finance chat failed: {str(e)}")
+
+    return {
+        "status": "ok",
+        "reply": reply,
+        "session_id": session_id,
+        "metadata": metadata,
+    }
+
+@app.get("/api/finance/chat/history/{session_id}", tags=["Finance"])
+async def get_finance_chat_history(session_id: str, user_id: str = Depends(get_current_user)):
+    """Retrieve finance chat history for a given session ID."""
+    history = await _db_service.find(
+        "finance_conversation_history",
+        {"session_id": session_id},
+        sort=[("timestamp", 1)]
+    )
+    return {"history": history}
+
+# ---------------------------------------------------------------------------
 # Finance — Transactions
 # ---------------------------------------------------------------------------
 @app.get("/api/finance/transactions", tags=["Finance"])
-async def get_finance_transactions():
+async def get_finance_transactions(user_id: str = Depends(get_current_user)):
     """Return all financial ledger entries sorted by date descending."""
-    transactions = await db_service.find(
-        "financial_ledger", {}, sort=[("date", -1)]
+    transactions = await _db_service.find(
+        "financial_ledger", {"user_id": user_id}, sort=[("date", -1)]
     )
     return {"transactions": transactions, "count": len(transactions)}
 
@@ -464,7 +1062,16 @@ async def set_salary(
     tax_regime: str = Form("new", description="'new' or 'old'"),
 ):
     """Set or update the user's salary and tax regime preference."""
-    # TODO: Wire to Financial Agent
+    await _db_service.update_one(
+        "user_profile",
+        {},  # Single-user system
+        {"$set": {
+            "monthly_salary": monthly_salary,
+            "tax_regime": tax_regime,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
+    )
     return {
         "status": "saved",
         "monthly_salary": monthly_salary,
@@ -472,49 +1079,120 @@ async def set_salary(
     }
 
 
+@app.post("/api/finance/transaction", tags=["Finance"])
+async def create_finance_transaction(req: TransactionRequest, user_id: str = Depends(get_current_user)):
+    """Log a manual transaction to the financial ledger."""
+    now = datetime.now(timezone.utc)
+    transaction = {
+        "user_id": user_id,
+        "date": now.isoformat(),
+        "description": req.description,
+        "amount": req.amount,
+        "category": req.category,
+        "type": req.type,
+    }
+
+    res = await _db_service.insert_one("financial_ledger", transaction)
+    transaction["_id"] = res
+    return transaction
 @app.get("/api/finance/summary", tags=["Finance"])
-async def get_financial_summary():
-    """Get financial summary: tax computation, spending, disposable income."""
-    # TODO: Wire to Financial Agent
-    return {"message": "Financial summary endpoint — wire to Financial Agent."}
+async def get_financial_summary(user_id: str = Depends(get_current_user)):
+    """Get financial summary: monthly spending, income, and category breakdown."""
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Spending by category this month. Handle legacy ISO-string dates and newer
+    # Mongo datetime dates so AI orders show up immediately in Insights.
+    transactions = await _db_service.find(
+        "financial_ledger",
+        {"user_id": user_id, "type": "expense"},
+        limit=500,
+        sort=[("date", -1)],
+    )
+    category_totals = {}
+    for tx in transactions:
+        raw_date = tx.get("date")
+        if isinstance(raw_date, str):
+            try:
+                tx_date = datetime.fromisoformat(raw_date.replace("Z", "+00:00"))
+                if tx_date.tzinfo is None:
+                    tx_date = tx_date.replace(tzinfo=timezone.utc)
+            except Exception:
+                tx_date = now
+        elif isinstance(raw_date, datetime):
+            tx_date = raw_date
+            if tx_date.tzinfo is None:
+                tx_date = tx_date.replace(tzinfo=timezone.utc)
+        else:
+            tx_date = now
+
+        if tx_date >= month_start:
+            category = tx.get("category") or "Other"
+            category_totals[category] = category_totals.get(category, 0) + float(tx.get("amount") or 0)
+
+    by_category = [
+        {"_id": category, "total": total}
+        for category, total in sorted(category_totals.items(), key=lambda row: row[1], reverse=True)
+    ]
+
+    total_spending = sum(c.get("total", 0) for c in by_category)
+
+    # User profile for salary
+    profile = await _db_service.find_one("user_profile", {})
+    salary = profile.get("monthly_salary", 0) if profile else 0
+
+    return {
+        "month": now.strftime("%B %Y"),
+        "total_spending": total_spending,
+        "monthly_salary": salary,
+        "disposable_income": salary - total_spending,
+        "category_breakdown": [
+            {"category": c["_id"], "amount": c["total"]} for c in by_category
+        ],
+    }
 
 
 # ---------------------------------------------------------------------------
 # Analytics Endpoints
 # ---------------------------------------------------------------------------
 @app.get("/api/analytics/carbon", tags=["Analytics"])
-async def get_carbon_footprint():
+async def get_carbon_footprint(user_id: str = Depends(get_current_user)):
     """Get carbon footprint entries sorted by month."""
-    entries = await db_service.find(
+    entries = await _db_service.find(
         "carbon_log", {}, sort=[("month", -1)]
     )
     return {"carbon_log": entries, "count": len(entries)}
 
 
 @app.get("/api/analytics/nutrition", tags=["Analytics"])
-async def get_nutrition_report():
+async def get_nutrition_report(user_id: str = Depends(get_current_user)):
     """Get nutrition log entries sorted by date."""
-    entries = await db_service.find(
+    entries = await _db_service.find(
         "nutrition_log", {}, sort=[("date", -1)], limit=30
     )
     return {"nutrition_log": entries, "count": len(entries)}
 
 
 @app.get("/api/analytics/restock", tags=["Analytics"])
-async def get_restock_alerts():
+async def get_restock_alerts(user_id: str = Depends(get_current_user)):
     """Items likely to run out soon (low quantity or expiring)."""
-    low_qty = await db_service.find(
+    low_qty = await _db_service.find(
         "inventory",
-        {"$or": [{"status": "expiring"}, {"quantity": {"$lte": 1}}]},
+        {
+            "user_id": user_id, 
+            "is_consumed": {"$ne": True},
+            "quantity": {"$gt": 0}, 
+            "$or": [{"status": "expiring"}, {"quantity": {"$lte": 1}}]
+        },
     )
     return {"restock_items": low_qty, "count": len(low_qty)}
 
 
 @app.get("/api/analytics/behavior", tags=["Analytics"])
-async def get_behavior_insights():
+async def get_behavior_insights(user_id: str = Depends(get_current_user)):
     """Spending patterns from financial ledger."""
-    transactions = await db_service.find(
-        "financial_ledger", {}, sort=[("date", -1)], limit=50
+    transactions = await _db_service.find(
+        "financial_ledger", {"user_id": user_id}, sort=[("date", -1)], limit=50
     )
     # Category breakdown
     by_cat = {}
@@ -531,15 +1209,267 @@ async def get_behavior_insights():
 @app.get("/api/user/profile", tags=["User"])
 async def get_user_profile():
     """Get the user profile."""
-    profile = await db_service.find_one("user_profile", {})
+    profile = await _db_service.find_one("user_profile", {})
     return {"profile": profile}
 
 
 @app.get("/api/analytics/warranties", tags=["Analytics"])
 async def get_warranties():
     """Get all warranties from the warranties collection."""
-    warranties = await db_service.find("warranties", {})
+    warranties = await _db_service.find("warranties", {})
     return {"warranties": warranties, "count": len(warranties)}
+
+
+# ---------------------------------------------------------------------------
+# AI Category Agent — Batch Re-categorization
+# ---------------------------------------------------------------------------
+@app.post("/api/inventory/categorize", tags=["Inventory"])
+async def categorize_inventory():
+    """Re-categorize inventory items that have generic categories."""
+    if not _gemini_client:
+        raise HTTPException(503, "Gemini client not available.")
+
+    # Find items with generic categories
+    generic_cats = ["Groceries", "OTHER", "Other", "Produce", "Dairy", "Grains", "Spices", "Meat", "Beverages", "Cooking"]
+    all_items = await _db_service.find("inventory", {"category": {"$in": generic_cats}})
+
+    if not all_items:
+        return {"status": "ok", "message": "No items need categorization", "categorized": 0}
+
+    # Build prompt with all item names
+    item_names = [item.get("name", "Unknown") for item in all_items]
+
+    prompt = f"""You are a grocery categorization expert. Classify each item below into exactly one category.
+
+CATEGORIES (use EXACTLY these values):
+PRODUCE, MEAT_SEAFOOD, DAIRY_EGGS, FROZEN, BAKERY, BEVERAGES, PANTRY_DRY, SNACKS, CONDIMENTS, HOUSEHOLD, PERSONAL_CARE, OTHER
+
+SUB-CATEGORIES:
+- PRODUCE: leafy_greens, root_vegetables, tomatoes_peppers, tropical_fruits, citrus_fruits, berries, mushrooms, herbs, onion_garlic, gourd_vegetables
+- MEAT_SEAFOOD: poultry, red_meat, pork, seafood_fish, seafood_shellfish, processed_deli
+- DAIRY_EGGS: milk, hard_cheese, soft_cheese, yogurt, butter_cream, eggs
+- FROZEN: frozen_meat, frozen_meals, ice_cream, frozen_vegetables, frozen_seafood
+- BEVERAGES: juice_fresh, juice_packed, soda_carbonated, water, alcohol_beer, hot_beverage
+- PANTRY_DRY: rice_pasta, flour, legumes_pulses, canned_goods, spices_masala, oil, sugar_salt, instant_food
+- SNACKS: chips_crisps, cookies_biscuits, namkeen, nuts_dried_fruits, chocolate_candy
+- CONDIMENTS: ketchup_sauces, mayonnaise, spread_butter
+
+DIETARY FLAGS: VEG, VEGAN, NON_VEG, SEAFOOD, DAIRY, EGG, MIXED, NA
+
+IS_PERISHABLE: true if the item spoils (fruits, meat, dairy, bakery). false for dry goods, household, etc.
+
+Items to classify:
+{json.dumps(item_names)}
+
+Return ONLY a JSON array:
+[{{"name": "...", "category": "...", "sub_category": "...", "dietary_flag": "...", "is_perishable": true}}]"""
+
+    model_name = os.getenv("GEMINI_MODEL", "gemini-3.1-pro")
+    response = await call_gemini_with_retry(lambda: _gemini_client.aio.models.generate_content(
+        model=model_name,
+        contents=prompt,
+        config=genai_types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.1,
+        )
+    ))
+
+    classifications = json.loads(response.text)
+
+    # Build a lookup from name -> classification
+    class_map = {c["name"].lower(): c for c in classifications}
+
+    updated = 0
+    for item in all_items:
+        name_lower = item.get("name", "").lower()
+        cls = class_map.get(name_lower)
+        if not cls:
+            # Try fuzzy: find the first classification whose name is contained in item name or vice versa
+            for cn, cv in class_map.items():
+                if cn in name_lower or name_lower in cn:
+                    cls = cv
+                    break
+
+        if cls:
+            update_data = {
+                "category": cls.get("category", "OTHER"),
+                "sub_category": cls.get("sub_category", "default"),
+                "dietary_flag": cls.get("dietary_flag", "NA"),
+                "is_perishable": cls.get("is_perishable", False),
+            }
+            await _db_service.update_one(
+                "inventory",
+                {"_id": ObjectId(item["_id"]), "user_id": user_id},
+                {"$set": update_data}
+            )
+            updated += 1
+
+    return {"status": "ok", "categorized": updated, "total_checked": len(all_items)}
+
+
+# ---------------------------------------------------------------------------
+# Smart Expiry Agent — Batch AI Expiry Estimation
+# ---------------------------------------------------------------------------
+@app.post("/api/inventory/estimate-expiry", tags=["Inventory"])
+async def estimate_expiry_batch():
+    """Estimate expiry dates for items missing them using Gemini AI."""
+    if not _gemini_client:
+        raise HTTPException(503, "Gemini client not available.")
+
+    # Find items without expiry dates
+    items = await _db_service.find(
+        "inventory",
+        {"$or": [
+            {"expiry_date": None},
+            {"expiry_date": {"$exists": False}},
+            {"safe_expiry_date": None},
+            {"safe_expiry_date": {"$exists": False}},
+        ]},
+        limit=50
+    )
+
+    if not items:
+        return {"status": "ok", "message": "All items have expiry dates", "estimated": 0}
+
+    estimated = 0
+    for item in items:
+        name = item.get("name", "Unknown")
+        category = item.get("category", "OTHER")
+        is_packed = category in ["PANTRY_DRY", "SNACKS", "BEVERAGES", "CONDIMENTS", "FROZEN"]
+
+        result = await estimate_expiry_with_ai(_gemini_client, name, category, is_packed)
+        remaining = result.get("remaining_days")
+
+        if remaining and remaining > 0:
+            now = datetime.utcnow()
+            expiry_date = now + timedelta(days=remaining)
+            safe_factor = 0.75 if is_packed else 0.50
+            safe_days = int(remaining * safe_factor)
+            safe_expiry = now + timedelta(days=safe_days)
+
+            status = get_item_status(safe_expiry)
+
+            await _db_service.update_one(
+                "inventory",
+                {"_id": ObjectId(item["_id"]), "user_id": user_id},
+                {"$set": {
+                    "expiry_date": expiry_date.isoformat(),
+                    "safe_expiry_date": safe_expiry.isoformat(),
+                    "shelf_life_days": result.get("total_shelf_life_days", remaining),
+                    "safe_days": safe_days,
+                    "status": status,
+                    "storage_note": result.get("storage_tip", ""),
+                    "expiry_source": "ai_estimated",
+                    "expiry_confidence": result.get("confidence", 0),
+                    "expiry_reasoning": result.get("reasoning", ""),
+                }}
+            )
+            estimated += 1
+
+    return {"status": "ok", "estimated": estimated, "total_checked": len(items)}
+
+
+@app.get("/api/images/cloud/{slug}", tags=["Inventory", "Images"])
+async def get_cloud_image(slug: str):
+    """Serve a product image from the cloud database cache."""
+    doc = await _db_service.find_one("cloud_images", {"slug": slug})
+    if not doc or "image_base64" not in doc:
+        raise HTTPException(status_code=404, detail="Image not found")
+    
+    from fastapi.responses import Response
+    import base64
+    image_bytes = base64.b64decode(doc["image_base64"])
+    content_type = doc.get("content_type", "image/webp")
+    return Response(content=image_bytes, media_type=content_type)
+
+
+
+# ---------------------------------------------------------------------------
+# Medical Conditions & Health Profile
+# ---------------------------------------------------------------------------
+class MedicalConditionRequest(BaseModel):
+    condition_name: str
+    user_id: str = "default_user"
+
+
+@app.get("/api/medical/conditions", tags=["Medical"])
+async def get_medical_conditions(user_id: str = "default_user"):
+    """List all medical conditions for a user."""
+    conditions = await _db_service.find("medical_conditions", {"user_id": user_id})
+    return {"conditions": conditions, "count": len(conditions)}
+
+
+@app.post("/api/medical/conditions", tags=["Medical"])
+async def add_medical_condition(req: MedicalConditionRequest, background_tasks: BackgroundTasks):
+    """Add a new medical condition and trigger AI research."""
+    existing = await _db_service.find_one("medical_conditions", {
+        "user_id": req.user_id,
+        "condition_name": {"$regex": f"^{req.condition_name}$", "$options": "i"}
+    })
+    if existing:
+        raise HTTPException(409, f"Condition '{req.condition_name}' already exists.")
+
+    doc = {
+        "user_id": req.user_id,
+        "condition_name": req.condition_name,
+        "researched": False,
+        "foods_to_avoid": [],
+        "foods_to_eat": [],
+        "medicines": [],
+        "treatments": [],
+        "dietary_notes": "Researching...",
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    inserted_id = await _db_service.insert_one("medical_conditions", doc)
+    doc["_id"] = inserted_id
+
+    background_tasks.add_task(_research_condition_background, str(inserted_id), req.condition_name)
+
+    return {"status": "created", "condition": doc, "message": "Gemini is researching this condition..."}
+
+
+async def _research_condition_background(condition_id: str, condition_name: str):
+    """Background task to research a medical condition via Gemini."""
+    if not _gemini_client:
+        logger.warning("Cannot research condition - no Gemini client")
+        return
+    try:
+        result = await research_condition(_gemini_client, condition_name)
+        await _db_service.update_one(
+            "medical_conditions",
+            {"_id": ObjectId(condition_id)},
+            {"$set": result}
+        )
+        logger.info(f"Medical research complete for '{condition_name}'")
+    except Exception as e:
+        logger.error(f"Medical research background task failed: {e}")
+
+
+@app.delete("/api/medical/conditions/{condition_id}", tags=["Medical"])
+async def delete_medical_condition(condition_id: str):
+    """Delete a medical condition."""
+    try:
+        oid = ObjectId(condition_id)
+    except Exception:
+        raise HTTPException(400, "Invalid condition ID format.")
+    deleted = await _db_service.delete_one("medical_conditions", {"_id": oid})
+    if deleted == 0:
+        raise HTTPException(404, "Condition not found.")
+    return {"status": "deleted", "condition_id": condition_id}
+
+
+@app.get("/api/medical/inventory-check", tags=["Medical"])
+async def run_inventory_safety_check(user_id: str = "default_user"):
+    """Run 2nd-line-of-defence inventory safety scan against medical restrictions."""
+    if not _gemini_client:
+        raise HTTPException(503, "Gemini client not available.")
+    return await check_inventory_safety(_gemini_client, _db_service, user_id)
+
+
+@app.get("/api/medical/restrictions", tags=["Medical"])
+async def get_restrictions(user_id: str = "default_user"):
+    """Get aggregated dietary restrictions from all conditions."""
+    return await get_dietary_restrictions(_db_service, user_id)
 
 
 # ---------------------------------------------------------------------------

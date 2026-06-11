@@ -19,7 +19,7 @@ PantryMind is an intelligent multi-agent system built on Google ADK and powered 
 
 ## 🛠 Tech Stack
 - Google ADK (Agent Development Kit)
-- Gemini 2.5 Flash & Gemini Live
+- Gemini 3.1 Pro & Gemini Live
 - MongoDB Atlas & Vector Search
 - Official MongoDB MCP Server
 - React / Vite

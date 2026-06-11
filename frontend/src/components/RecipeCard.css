@@ -1,0 +1,288 @@
+.recipe-card-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  max-width: 420px;
+}
+
+.recipe-card {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+/* Header */
+.rc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(135deg, rgba(107, 158, 112, 0.08) 0%, rgba(196, 114, 79, 0.06) 100%);
+}
+
+.rc-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rc-header-icon {
+  color: var(--sage-700);
+}
+
+.rc-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+
+.rc-type-badge {
+  background: var(--sage-700);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Sections */
+.rc-section {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.rc-section:last-of-type {
+  border-bottom: none;
+}
+
+.rc-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+}
+
+/* Ingredients Table */
+.rc-ingredients-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.rc-ingredients-table thead th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.rc-ingredients-table tbody tr.even {
+  background: rgba(107, 158, 112, 0.04);
+}
+
+.rc-ingredients-table tbody tr.odd {
+  background: transparent;
+}
+
+.rc-ingredients-table td {
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
+.rc-amount {
+  font-weight: 600;
+  color: var(--sage-700);
+  white-space: nowrap;
+  width: 70px;
+}
+
+.rc-ingredient-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.rc-note {
+  font-style: italic;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+}
+
+/* Steps */
+.rc-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rc-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.rc-step-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.rc-step-text {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+/* Nutrition Grid */
+.rc-nutrition-section {
+  border-bottom: none;
+}
+
+.rc-nutrition-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.rc-nutri-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 6px;
+  border-radius: 12px;
+  gap: 2px;
+}
+
+.rc-nutri-pill.cal {
+  background: rgba(107, 158, 112, 0.12);
+}
+
+.rc-nutri-pill.protein {
+  background: rgba(93, 136, 195, 0.12);
+}
+
+.rc-nutri-pill.carbs {
+  background: rgba(210, 168, 84, 0.12);
+}
+
+.rc-nutri-pill.fat {
+  background: rgba(196, 114, 79, 0.12);
+}
+
+.rc-nutri-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.rc-nutri-label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+}
+
+/* Tip */
+.rc-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 24px;
+  background: rgba(210, 168, 84, 0.08);
+  border-top: 1px solid rgba(210, 168, 84, 0.15);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.rc-tip-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Save Button */
+.rc-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rc-save-btn:hover {
+  background: var(--sage-700);
+  color: white;
+  border-color: var(--sage-700);
+}
+
+.rc-prep-capture-area {
+  padding: 16px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+}
+.rc-step {
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.rc-step.completed .rc-step-text {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+.rc-step-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+}
+.rc-step.completed .rc-step-checkbox {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.rc-step:not(.completed) .rc-step-checkbox {
+  background: var(--sage-700);
+  color: white;
+  border-color: var(--sage-700);
+}
+.rc-step-num { display: block; }
+

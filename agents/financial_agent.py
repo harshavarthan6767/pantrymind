@@ -106,7 +106,7 @@ handles edge cases (rebate, surcharge, cess) that are easy to get wrong.
 
 # ── Agent Definition ───────────────────────────────────────────────────────
 financial_agent = Agent(
-    model="gemini-2.5-flash",
+    model="gemini-3.1-pro",
     name="financial_agent",
     description=(
         "Personal finance agent for Indian taxation (New Regime FY 2026-27) "

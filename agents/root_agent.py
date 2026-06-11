@@ -28,7 +28,6 @@ from google.adk import Agent
 from google.adk.tools import AgentTool
 
 # ── Sub-agent imports ──────────────────────────────────────────────────────
-from agents.ingestion_agent import ingestion_agent
 from agents.inventory_agent import inventory_agent
 from agents.financial_agent import financial_agent
 from agents.dietary_agent import dietary_agent
@@ -254,7 +253,7 @@ These are automatic hand-offs — do them without asking the user.
 
 # ── Agent Definition ───────────────────────────────────────────────────────
 root_agent = Agent(
-    model="gemini-2.5-flash",
+    model="gemini-3.1-pro",
     name="root_agent",
     description=(
         "PantryMind Root Orchestrator. Classifies user intent and delegates "
@@ -263,7 +262,6 @@ root_agent = Agent(
     ),
     instruction=ROOT_INSTRUCTION,
     tools=[
-        AgentTool(agent=ingestion_agent),
         AgentTool(agent=inventory_agent),
         AgentTool(agent=financial_agent),
         AgentTool(agent=dietary_agent),

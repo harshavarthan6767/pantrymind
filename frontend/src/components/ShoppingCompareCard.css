@@ -1,0 +1,165 @@
+.scc-wrapper {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  font-family: inherit;
+  color: var(--text-primary);
+  margin-top: 12px;
+  max-width: 500px;
+}
+
+.scc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: linear-gradient(135deg, rgba(93, 136, 195, 0.08) 0%, rgba(107, 158, 112, 0.06) 100%);
+}
+
+.scc-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--sage-700);
+}
+
+.scc-header-left h4 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.scc-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  background: rgba(107, 158, 112, 0.1);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* Table */
+.scc-table-wrapper {
+  overflow-x: auto;
+  padding: 0;
+}
+
+.scc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.scc-table thead th {
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: bottom;
+}
+
+.scc-item-col {
+  text-align: left !important;
+  width: 35%;
+}
+
+.scc-provider-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.scc-provider-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.scc-delivery {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.scc-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.scc-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.scc-item-name {
+  padding: 10px 12px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.scc-item-qty {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.scc-price-cell {
+  padding: 10px 12px;
+  text-align: center;
+  position: relative;
+}
+
+.scc-price-cell.best {
+  background: rgba(107, 158, 112, 0.08);
+}
+
+.scc-price {
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: block;
+}
+
+.scc-rating {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.scc-best-tag {
+  display: inline-block;
+  background: var(--sage-700);
+  color: white;
+  font-size: 0.55rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.scc-footer {
+  padding: 10px 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.scc-disclaimer {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+}

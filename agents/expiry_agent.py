@@ -110,7 +110,7 @@ it spoils, using USDA-backed shelf-life data and vision-based analysis.
 
 # ── Agent Definition ───────────────────────────────────────────────────────
 expiry_agent = Agent(
-    model="gemini-2.5-flash",
+    model="gemini-3.1-pro",
     name="expiry_agent",
     description=(
         "Food spoilage prediction agent. Uses USDA shelf-life data for "

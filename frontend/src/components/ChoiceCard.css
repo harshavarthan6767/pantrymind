@@ -1,0 +1,130 @@
+.choice-card-container {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.choice-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.choice-card-summary {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.choice-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.choice-option {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.choice-option:hover {
+  background: rgba(107, 143, 113, 0.04);
+  border-color: rgba(107, 143, 113, 0.3);
+}
+
+.choice-option.selected {
+  background: rgba(107, 143, 113, 0.1);
+  border-color: var(--sage-500);
+}
+
+.choice-option-radio {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast);
+}
+
+.choice-option.selected .choice-option-radio {
+  border-color: var(--sage-500);
+}
+
+.choice-option.selected .choice-option-radio::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sage-500);
+}
+
+.choice-option-text {
+  flex: 1;
+}
+
+.choice-option-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: block;
+}
+
+.choice-option-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  display: block;
+  line-height: 1.4;
+}
+
+.choice-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.choice-proceed-btn {
+  background: var(--sage-500);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.choice-proceed-btn:hover:not(:disabled) {
+  background: var(--sage-700);
+}
+
+.choice-proceed-btn:disabled {
+  background: var(--bg-surface-2);
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  cursor: not-allowed;
+}

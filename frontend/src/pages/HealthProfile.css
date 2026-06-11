@@ -1,0 +1,425 @@
+.health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.health-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+}
+
+.title-icon {
+  color: var(--sage-500);
+}
+
+.health-subtitle {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.scan-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--status-warning);
+  color: var(--status-warning);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.scan-btn:hover:not(:disabled) {
+  background: rgba(201, 150, 74, 0.1);
+}
+
+.scan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Add Condition Bar */
+.add-condition-bar {
+  display: flex;
+  gap: 12px;
+  background: var(--bg-surface-2);
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 24px;
+}
+
+.condition-input {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.condition-input:focus {
+  border-color: var(--sage-500);
+}
+
+.add-condition-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--sage-700);
+  color: white;
+  border: none;
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-condition-btn:hover:not(:disabled) {
+  background: var(--sage-500);
+}
+
+.add-condition-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Conditions Grid */
+.conditions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.condition-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.condition-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.condition-card-header:hover {
+  background: var(--bg-surface-2);
+}
+
+.condition-name-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.condition-name-row h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.condition-icon {
+  color: var(--text-secondary);
+}
+
+.research-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.research-badge.done {
+  background: rgba(107, 158, 112, 0.15);
+  color: var(--sage-700);
+}
+
+.research-badge.pending {
+  background: rgba(201, 150, 74, 0.15);
+  color: var(--status-warning);
+}
+
+.delete-condition {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.delete-condition:hover {
+  color: var(--status-expired);
+  background: rgba(184, 92, 82, 0.1);
+}
+
+/* Condition Details */
+.condition-details {
+  padding: 0 20px 24px;
+  animation: fadeIn 0.4s ease;
+}
+
+.dietary-notes {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.detail-section {
+  margin-bottom: 24px;
+}
+
+.detail-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.detail-section.avoid h4 { color: var(--status-expired); }
+.detail-section.eat h4 { color: var(--sage-700); }
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.avoid-tag {
+  background: rgba(184, 92, 82, 0.1);
+  color: var(--status-expired);
+  border: 1px solid rgba(184, 92, 82, 0.2);
+}
+
+.eat-tag {
+  background: rgba(107, 158, 112, 0.1);
+  color: var(--sage-700);
+  border: 1px solid rgba(107, 158, 112, 0.2);
+}
+
+.medicine-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.medicine-item {
+  background: var(--bg-surface-2);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.medicine-item strong {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.medicine-item span {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.medicine-item small {
+  color: var(--sage-500);
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.treatments ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Safety Report Banner */
+.safety-report {
+  background: rgba(201, 150, 74, 0.1);
+  border: 1px solid var(--status-warning);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 24px;
+  animation: slideDown 0.4s ease;
+}
+
+.safety-report-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--status-warning);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.close-report {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--status-warning);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.close-report:hover { opacity: 1; }
+
+.flagged-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flagged-item {
+  display: flex;
+  gap: 12px;
+  background: var(--bg-surface);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--text-secondary);
+}
+
+.flagged-item.severity-high { border-left-color: var(--status-expired); }
+.flagged-item.severity-medium { border-left-color: var(--status-warning); }
+.flagged-item.severity-low { border-left-color: var(--sage-500); }
+
+.flagged-item svg {
+  color: var(--status-warning);
+  margin-top: 2px;
+}
+
+.flagged-item.severity-high svg { color: var(--status-expired); }
+
+.flagged-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flagged-info strong { color: var(--text-primary); }
+.flagged-info span { color: var(--text-secondary); font-size: 0.9rem; }
+.flagged-info small { color: var(--sage-700); font-weight: 500; font-size: 0.8rem; }
+
+.safety-ok {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--sage-700);
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Utils */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+.empty-state svg {
+  color: var(--border-subtle);
+  margin-bottom: 16px;
+}
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px;
+  color: var(--text-secondary);
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.confirm-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 400px;
+  text-align: center;
+}
+
+.confirm-modal h3 { margin: 0 0 12px 0; color: var(--text-primary); }
+.confirm-modal p { color: var(--text-secondary); margin-bottom: 24px; }
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.confirm-actions button {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+.btn-outline:hover { background: var(--bg-surface-2); }
+
+.btn-danger {
+  background: var(--status-expired);
+  color: white;
+  border: none;
+}
+.btn-danger:hover { opacity: 0.9; }

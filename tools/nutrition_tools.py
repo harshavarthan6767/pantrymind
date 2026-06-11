@@ -279,7 +279,7 @@ RDA compliance:
 Keep the tone supportive and motivational. Use ₹ for any cost references.
 Focus on practical food suggestions available in India."""
 
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-3.1-pro")
         response = model.generate_content(prompt)
         report = response.text
 

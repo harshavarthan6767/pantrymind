@@ -11,18 +11,8 @@ Usage:
 """
 
 # ── OCR Tools ──────────────────────────────────────────────────────────────
-from tools.ocr_tools import (
-    parse_receipt_image,
-    parse_invoice_image,
-    structure_receipt_data,
-    categorize_items,
-)
-
-# ── Storage Tools ──────────────────────────────────────────────────────────
-from tools.storage_tools import (
-    store_receipt_image,
-    retrieve_receipt_image,
-)
+# 🚀 Storage Tools ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Storage tools removed as part of cleanup
 
 # ── Tax Tools ──────────────────────────────────────────────────────────────
 from tools.tax_tools import (
@@ -87,16 +77,8 @@ from tools.restock_tools import (
 )
 
 
-# ── Master list for bulk registration ──────────────────────────────────────
+# 🚀 Master list for bulk registration ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ALL_TOOLS = [
-    # OCR
-    parse_receipt_image,
-    parse_invoice_image,
-    structure_receipt_data,
-    categorize_items,
-    # Storage
-    store_receipt_image,
-    retrieve_receipt_image,
     # Tax
     compute_indian_tax,
     compute_disposable_income,

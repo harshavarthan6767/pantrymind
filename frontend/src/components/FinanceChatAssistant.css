@@ -1,0 +1,207 @@
+.finance-chat-overlay {
+  position: fixed;
+  top: var(--titlebar-height);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(5px);
+}
+
+.finance-chat-drawer {
+  width: min(440px, 100%);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-xl);
+  animation: financeSlideIn 280ms var(--ease-out-quart);
+}
+
+.finance-chat-drawer .chat-header,
+.finance-chat-drawer .chat-input-area {
+  display: flex;
+  align-items: center;
+  padding: 18px 20px;
+  background: var(--bg-surface);
+  border-color: var(--border-subtle);
+}
+
+.finance-chat-drawer .chat-header {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.finance-chat-drawer .chat-title,
+.finance-chat-drawer .chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.finance-chat-drawer .chat-title h2 { margin: 0; font-size: var(--text-lg); }
+.finance-chat-drawer .chat-icon { color: var(--sage-700); }
+
+.finance-chat-drawer .model-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--sage-700);
+  background: var(--sage-50);
+  border: 1px solid var(--sage-100);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.finance-chat-drawer .icon-btn,
+.finance-chat-drawer .close-btn {
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+}
+
+.finance-chat-drawer .icon-btn { padding: 8px; display: grid; place-items: center; }
+.finance-chat-drawer .close-btn { position: static; padding: 2px 8px; font-size: 24px; }
+.finance-chat-drawer .icon-btn:hover,
+.finance-chat-drawer .close-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-2);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px 20px;
+  background: var(--bg-canvas);
+}
+
+.chat-empty {
+  min-height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.chat-empty h3 { margin: 12px 0 6px; }
+.empty-icon { color: var(--sage-700); }
+
+.chat-suggestions {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.chat-suggestions button {
+  padding: 12px 14px;
+  color: var(--text-primary);
+  text-align: left;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.chat-suggestions button:hover {
+  border-color: var(--sage-300);
+  background: var(--sage-50);
+}
+
+.chat-bubble {
+  max-width: 86%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-bubble.user { align-self: flex-end; }
+.chat-bubble.assistant { align-self: flex-start; }
+.chat-bubble.system { align-self: center; }
+
+.chat-content {
+  padding: 11px 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble.user .chat-content {
+  color: var(--text-inverse);
+  background: var(--sage-700);
+  border-color: var(--sage-700);
+  border-bottom-right-radius: 4px;
+}
+
+.chat-bubble.assistant .chat-content { border-bottom-left-radius: 4px; }
+
+.chat-bubble.system .chat-content {
+  color: var(--status-expired);
+  background: color-mix(in srgb, var(--status-expired) 10%, var(--bg-surface));
+}
+
+.currency { color: var(--sage-700); font-weight: 700; }
+.chat-time { color: var(--text-tertiary); font-size: 11px; }
+.chat-bubble.user .chat-time { align-self: flex-end; }
+
+.typing-dots span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 3px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: financeTyping 1.4s infinite both;
+}
+
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+.chat-input-area {
+  gap: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.chat-input-area input {
+  min-width: 0;
+  flex: 1;
+  padding: 12px 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  outline: none;
+}
+
+.chat-input-area input:focus { border-color: var(--sage-500); }
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--text-inverse);
+  background: var(--sage-700);
+  border-radius: var(--radius-md);
+}
+
+.send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@keyframes financeSlideIn {
+  from { transform: translateX(100%); }
+}
+
+@keyframes financeTyping {
+  40% { transform: translateY(-4px); opacity: 1; }
+  0%, 80%, 100% { opacity: 0.45; }
+}

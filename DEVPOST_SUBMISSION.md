@@ -24,7 +24,7 @@ PantryMind uses a **Multi-Agent Architecture** to manage your kitchen and financ
 - **Human-in-the-Loop Governance**: Before any agent can modify your core database (like restocking inventory or deleting items), the action is intercepted by an Approval Inbox. You must explicitly approve medium/high-risk actions before the transaction commits.
 
 ## 🛠 How we built it
-The core engine runs on **Google ADK (Agent Development Kit)** orchestrating **Gemini 2.5 Flash** models. Each aspect of the house is governed by a specialized sub-agent (Pantry Agent, Finance Agent, Kitchen Chef, Shopping Agent).
+The core engine runs on **Google ADK (Agent Development Kit)** orchestrating **Gemini 3.1 Pro** models. Each aspect of the house is governed by a specialized sub-agent (Pantry Agent, Finance Agent, Kitchen Chef, Shopping Agent).
 
 To bridge the AI reasoning with the database, we integrated the **official MongoDB MCP (Model Context Protocol) Server**. Instead of writing custom middleman APIs, our agents communicate directly with MongoDB via the standardized MCP protocol over `stdio`.
 
@@ -54,7 +54,7 @@ We learned the sheer power of isolating AI responsibilities. By explicitly givin
 
 ## 💻 Built With
 - `google-adk`
-- `gemini-2.5-flash`
+- `gemini-3.1-pro`
 - `mongodb-atlas`
 - `mcp` (Model Context Protocol)
 - `fastapi`

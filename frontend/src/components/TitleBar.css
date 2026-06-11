@@ -1,0 +1,128 @@
+.titlebar {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr) max-content;
+  align-items: center;
+  height: var(--titlebar-height);
+  background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border-subtle);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-app-region: drag;
+  z-index: 9999;
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.titlebar-left, .titlebar-right {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-left {
+  justify-content: flex-start;
+}
+
+.titlebar-right {
+  justify-content: flex-end;
+}
+
+.titlebar-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.mac-controls {
+  display: flex;
+  gap: 8px;
+  padding-left: 16px;
+}
+
+.mac-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.mac-btn.close { background-color: #FF5F56; }
+.mac-btn.minimize { background-color: #FFBD2E; }
+.mac-btn.maximize { background-color: #27C93F; }
+
+.app-wordmark {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.leaf-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.status-container {
+  height: 100%;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: no-drag;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.connected {
+  background-color: var(--status-fresh);
+  box-shadow: 0 0 8px var(--status-fresh);
+  animation: pulse-dot 2s infinite;
+}
+
+.status-dot.disconnected {
+  background-color: var(--text-tertiary);
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.win-controls {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.win-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  min-height: var(--titlebar-height);
+  color: var(--text-primary);
+  transition: background-color 0.1s;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.win-btn:hover {
+  background-color: rgba(44, 36, 28, 0.08);
+}
+
+.win-btn.close-btn:hover {
+  background-color: #E81123;
+  color: white;
+}

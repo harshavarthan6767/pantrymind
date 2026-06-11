@@ -17,6 +17,17 @@ from pymongo.errors import ConnectionFailure
 
 logger = logging.getLogger("pantrymind.db")
 
+_global_db_service = None
+
+def get_db_service():
+    global _global_db_service
+    if not _global_db_service:
+        _global_db_service = MongoDBService()
+    return _global_db_service
+
+async def get_db():
+    svc = get_db_service()
+    return svc.db
 
 class MongoDBService:
     """Async MongoDB Atlas client wrapper."""
@@ -33,6 +44,8 @@ class MongoDBService:
         "carbon_log",
         "nutrition_log",
         "restock_predictions",
+        "conversation_history",
+        "medical_conditions",
     ]
 
     def __init__(self):
@@ -60,7 +73,10 @@ class MongoDBService:
             uri,
             maxPoolSize=20,
             minPoolSize=2,
-            serverSelectionTimeoutMS=15000,
+            serverSelectionTimeoutMS=8000,
+            connectTimeoutMS=8000,
+            socketTimeoutMS=15000,
+            retryWrites=True,
             tlsCAFile=certifi.where(),
         )
         self._db = self._client[db_name]
@@ -128,6 +144,14 @@ class MongoDBService:
     def restock_predictions(self):
         return self.db["restock_predictions"]
 
+    @property
+    def conversation_history(self):
+        return self.db["conversation_history"]
+
+    @property
+    def medical_conditions(self):
+        return self.db["medical_conditions"]
+
     # ------------------------------------------------------------------
     # Generic CRUD helpers (used by REST endpoints as fallback)
     # ------------------------------------------------------------------
@@ -161,7 +185,7 @@ class MongoDBService:
 
     async def insert_many(self, collection_name: str, documents: list[dict]) -> list[str]:
         """Insert multiple documents. Returns list of inserted IDs."""
-        result = await self.db[collection_name].insert_many(documents)
+        result = await self.db[collection_name].insert_many(documents, ordered=False)
         return [str(id_) for id_ in result.inserted_ids]
 
     async def update_one(
@@ -182,6 +206,11 @@ class MongoDBService:
         result = await self.db[collection_name].delete_one(query)
         return result.deleted_count
 
+    async def delete_many(self, collection_name: str, query: dict) -> int:
+        """Delete multiple documents. Returns deleted count."""
+        result = await self.db[collection_name].delete_many(query)
+        return result.deleted_count
+
     async def find_one(
         self, collection_name: str, query: dict
     ) -> dict | None:
@@ -190,6 +219,10 @@ class MongoDBService:
         if doc:
             doc["_id"] = str(doc["_id"])
         return doc
+
+    async def count_documents(self, collection_name: str, query: dict | None = None) -> int:
+        """Count documents in a collection matching a query."""
+        return await self.db[collection_name].count_documents(query or {})
 
     async def aggregate(
         self,
@@ -212,14 +245,30 @@ class MongoDBService:
         """Create all required indexes for PantryMind collections."""
         logger.info("Setting up MongoDB indexes...")
 
-        # Inventory: text search on item_name + category compound
+        # Inventory: text search on item_name and normalized_name
         await self.inventory.create_index(
-            [("item_name", TEXT)],
+            [("item_name", TEXT), ("normalized_name", TEXT)],
             name="inventory_item_text",
         )
         await self.inventory.create_index(
             [("category", ASCENDING), ("purchase_date", DESCENDING)],
             name="inventory_category_date",
+        )
+        await self.inventory.create_index(
+            [("status", ASCENDING)],
+            name="inventory_status",
+        )
+        await self.inventory.create_index(
+            [("dietary_flag", ASCENDING)],
+            name="inventory_dietary_flag",
+        )
+        await self.inventory.create_index(
+            [("safe_expiry_date", ASCENDING)],
+            name="inventory_safe_expiry",
+        )
+        await self.inventory.create_index(
+            [("is_consumed", ASCENDING), ("category", ASCENDING), ("safe_expiry_date", ASCENDING)],
+            name="inventory_active_category_expiry",
         )
 
         # Receipts: date index for range queries
@@ -277,4 +326,19 @@ class MongoDBService:
             name="restock_depletion",
         )
 
+        # Medical conditions: user + condition name unique
+        await self.medical_conditions.create_index(
+            [("user_id", ASCENDING), ("condition_name", ASCENDING)],
+            name="medical_user_condition",
+            unique=True,
+        )
+
         logger.info("All indexes created successfully.")
+
+    async def setup_chat_indexes(self) -> None:
+        """Create indexes for conversation history."""
+        await self.conversation_history.create_index(
+            [("session_id", ASCENDING), ("timestamp", ASCENDING)],
+            name="chat_session_timeline",
+        )
+        logger.info("Chat indexes created.")

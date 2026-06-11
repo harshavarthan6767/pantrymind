@@ -206,7 +206,7 @@ When a query spans multiple domains:
 
 # ── Agent Definition ───────────────────────────────────────────────────────
 analytics_agent = Agent(
-    model="gemini-2.5-flash",
+    model="gemini-3.1-pro",
     name="analytics_agent",
     description=(
         "Multi-domain analytics engine covering Warranty Tracking, Behavior "

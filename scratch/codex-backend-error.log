@@ -1,0 +1,71 @@
+E:\pantrymind-desktop\.venv\Lib\site-packages\google\adk\features\_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.PLUGGABLE_AUTH is enabled.
+  check_feature_enabled()
+E:\pantrymind-desktop\adk\patterns\reflexion.py:4: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+2026-06-10 22:51:06,106 | pantrymind | INFO | Gemini AI Studio client initialized.
+INFO:     Started server process [7416]
+INFO:     Waiting for application startup.
+2026-06-10 22:51:06,456 | pantrymind.db | INFO | Connected to MongoDB database: finmind
+2026-06-10 22:51:06,463 | pantrymind | INFO | MongoDB Atlas connected.
+2026-06-10 22:51:06,463 | google_adk.google.adk.tools.mcp_tool.mcp_session_manager | WARNING | StdioServerParameters is not recommended. Please use StdioConnectionParams.
+2026-06-10 22:51:06,467 | google_adk.google.adk.tools.mcp_tool.mcp_session_manager | WARNING | StdioServerParameters is not recommended. Please use StdioConnectionParams.
+2026-06-10 22:51:06,468 | google_adk.google.adk.tools.mcp_tool.mcp_session_manager | WARNING | StdioServerParameters is not recommended. Please use StdioConnectionParams.
+2026-06-10 22:51:06,469 | google_adk.google.adk.tools.mcp_tool.mcp_session_manager | WARNING | StdioServerParameters is not recommended. Please use StdioConnectionParams.
+2026-06-10 22:51:06,469 | google_adk.google.adk.tools.mcp_tool.mcp_session_manager | WARNING | StdioServerParameters is not recommended. Please use StdioConnectionParams.
+2026-06-10 22:51:06,470 | pantrymind | INFO | Image generation daemon started.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+E:\pantrymind-desktop\.venv\Lib\site-packages\vertexai\_model_garden\_model_garden_models.py:278: UserWarning: This feature is deprecated as of June 24, 2025 and will be removed on June 24, 2026. For details, see https://cloud.google.com/vertex-ai/generative-ai/docs/deprecations/genai-vertexai-sdk.
+  warning_logs.show_deprecation_warning()
+E:\pantrymind-desktop\.venv\Lib\site-packages\google\adk\tools\function_tool.py:95: UserWarning: [EXPERIMENTAL] feature FeatureName.JSON_SCHEMA_FOR_FUNC_DECL is enabled.
+  build_function_declaration(
+2026-06-10 22:52:20,406 | google_adk.google.adk.models.google_llm | INFO | Sending out request, model: gemini-2.5-flash, backend: GoogleLLMVariant.GEMINI_API, stream: False
+2026-06-10 22:52:22,537 | google_adk.google.adk.models.google_llm | INFO | Response received from the model.
+E:\pantrymind-desktop\.venv\Lib\site-packages\google\adk\tools\mcp_tool\mcp_toolset.py:314: UserWarning: [EXPERIMENTAL] feature FeatureName._MCP_GRACEFUL_ERROR_HANDLING is enabled.
+  session = await self._mcp_session_manager.create_session(
+2026-06-10 22:52:29,978 | google_adk.google.adk.tools.mcp_tool.session_context | WARNING | Error on session runner task: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:52:29,979 | google_adk.google.adk.tools.mcp_tool.mcp_session_manager | INFO | Retrying get_tools due to error: Failed to create MCP session: Failed to create MCP session: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:52:37,275 | google_adk.google.adk.tools.mcp_tool.session_context | WARNING | Error on session runner task: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:52:37,283 | google_adk.google.adk.agents.llm_agent | WARNING | Failed to get tools from toolset MCPToolset: Failed to create MCP session: Failed to create MCP session: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:52:37,914 | google_adk.google.adk.models.google_llm | INFO | Sending out request, model: gemini-2.5-flash, backend: GoogleLLMVariant.GEMINI_API, stream: False
+2026-06-10 22:52:39,535 | google_adk.google.adk.models.google_llm | INFO | Response received from the model.
+2026-06-10 22:52:46,841 | google_adk.google.adk.tools.mcp_tool.session_context | WARNING | Error on session runner task: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:52:46,850 | google_adk.google.adk.tools.mcp_tool.mcp_session_manager | INFO | Retrying get_tools due to error: Failed to create MCP session: Failed to create MCP session: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:52:54,056 | google_adk.google.adk.tools.mcp_tool.session_context | WARNING | Error on session runner task: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:52:54,064 | google_adk.google.adk.agents.llm_agent | WARNING | Failed to get tools from toolset MCPToolset: Failed to create MCP session: Failed to create MCP session: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:53:01,609 | google_adk.google.adk.tools.mcp_tool.session_context | WARNING | Error on session runner task: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:53:01,610 | google_adk.google.adk.tools.mcp_tool.mcp_session_manager | INFO | Retrying get_tools due to error: Failed to create MCP session: Failed to create MCP session: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:53:08,828 | google_adk.google.adk.tools.mcp_tool.session_context | WARNING | Error on session runner task: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:53:08,831 | google_adk.google.adk.agents.llm_agent | WARNING | Failed to get tools from toolset MCPToolset: Failed to create MCP session: Failed to create MCP session: unhandled errors in a TaskGroup (1 sub-exception)
+2026-06-10 22:53:09,670 | google_adk.google.adk.models.google_llm | INFO | Sending out request, model: gemini-2.5-flash, backend: GoogleLLMVariant.GEMINI_API, stream: False
+2026-06-10 22:53:11,828 | google_adk.google.adk.models.google_llm | INFO | Response received from the model.
+2026-06-10 22:53:16,066 | google_adk.google.adk.runners | WARNING | Root node pantrymind_orchestrator was cancelled.
+2026-06-10 22:53:16,067 | opentelemetry.context | ERROR | Failed to detach context
+Traceback (most recent call last):
+  File "E:\pantrymind-desktop\.venv\Lib\site-packages\opentelemetry\trace\__init__.py", line 619, in use_span
+    yield span
+  File "E:\pantrymind-desktop\.venv\Lib\site-packages\opentelemetry\trace\__init__.py", line 519, in start_as_current_span
+    yield span
+  File "E:\pantrymind-desktop\.venv\Lib\site-packages\opentelemetry\trace\__init__.py", line 454, in start_as_current_span
+    yield span
+  File "E:\pantrymind-desktop\.venv\Lib\site-packages\google\adk\runners.py", line 592, in _run_node_async
+    yield event
+GeneratorExit
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "E:\pantrymind-desktop\.venv\Lib\site-packages\opentelemetry\context\__init__.py", line 155, in detach
+    _RUNTIME_CONTEXT.detach(token)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "E:\pantrymind-desktop\.venv\Lib\site-packages\opentelemetry\context\contextvars_context.py", line 53, in detach
+    self._current_context.reset(token)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+ValueError: <Token var=<ContextVar name='current_context' default={} at 0x0000018F47007330> at 0x0000018F76F7B700> was created in a different Context

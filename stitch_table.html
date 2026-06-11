@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kitchen Intelligence Inventory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #141313;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .row-hover:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "on-secondary": "#313030",
+                "secondary": "#c9c6c5",
+                "on-primary-fixed": "#1c1b1b",
+                "tertiary-fixed-dim": "#cac6c3",
+                "on-secondary-fixed-variant": "#474646",
+                "on-surface-variant": "#c4c7c7",
+                "on-primary-container": "#7e7d7d",
+                "surface-tint": "#c8c6c5",
+                "on-secondary-fixed": "#1c1b1b",
+                "on-tertiary-fixed": "#1c1b1a",
+                "tertiary": "#cac6c3",
+                "error": "#ffb4ab",
+                "primary-container": "#121212",
+                "on-background": "#e5e2e1",
+                "outline-variant": "#444748",
+                "outline": "#8e9192",
+                "on-primary-fixed-variant": "#474646",
+                "error-container": "#93000a",
+                "on-tertiary-container": "#807d7b",
+                "inverse-primary": "#5f5e5e",
+                "primary": "#c8c6c5",
+                "secondary-fixed-dim": "#c9c6c5",
+                "surface-container-highest": "#353434",
+                "surface-container-lowest": "#0e0e0e",
+                "on-tertiary": "#32302f",
+                "primary-fixed-dim": "#c8c6c5",
+                "surface-container-low": "#1c1b1b",
+                "tertiary-container": "#131211",
+                "on-error-container": "#ffdad6",
+                "on-tertiary-fixed-variant": "#484645",
+                "surface-container-high": "#2b2a2a",
+                "on-surface": "#e5e2e1",
+                "secondary-fixed": "#e5e2e1",
+                "surface": "#141313",
+                "on-error": "#690005",
+                "primary-fixed": "#e5e2e1",
+                "surface-dim": "#141313",
+                "inverse-surface": "#e5e2e1",
+                "inverse-on-surface": "#313030",
+                "tertiary-fixed": "#e6e1df",
+                "background": "#141313",
+                "surface-variant": "#353434",
+                "secondary-container": "#4a4949",
+                "surface-container": "#201f1f",
+                "on-secondary-container": "#bab8b7",
+                "surface-bright": "#3a3939",
+                "on-primary": "#313030"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+              },
+              "spacing": {
+                "sm": "8px",
+                "unit": "4px",
+                "xs": "4px",
+                "gutter": "24px",
+                "container-max": "1280px",
+                "xl": "48px",
+                "lg": "24px",
+                "md": "16px"
+              },
+              "fontFamily": {
+                "headline-md": ["Inter"],
+                "display-lg": ["Inter"],
+                "headline-lg": ["Inter"],
+                "body-sm": ["Inter"],
+                "headline-lg-mobile": ["Inter"],
+                "label-caps": ["Inter"],
+                "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                "body-sm": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "600"}],
+                "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen pb-20">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface/30 backdrop-blur-xl border-b border-outline-variant/10 flex items-center justify-between px-gutter h-16">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary">menu</span>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Kitchen Intelligence</h1>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img alt="User profile picture" data-alt="A professional headshot of a modern minimalist chef in a high-end dark kitchen setting. The lighting is soft and cinematic, emphasizing clean lines and a professional demeanor. The color palette is composed of deep charcoals, silvers, and warm skin tones, perfectly aligning with an obsidian glass UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0CDSlbbntYgAamKe4MnRXZtPv2X9irQ-X0ezw37tnzwSN9hP8ZQ5FUi2x-zLZ7bFvnFJorChUrhU9Crz7PqIEqyEJOd7QNpo6IvLi8O3w2QBlf9VuoM39th-X_9raWN3MbWoQgBHE1k1z5eK6XecaW9epZjlnFAH7XpvA3n923VGKwVSs6vwyHCMoJlVLeLotDwfzR0jMYesF8Y1vBcFHthVjc9tBxsza9jNfXMZbYrdgEdxuK8oCgCHqNgp-LqVdK-sTiDomxlc"/>
+</div>
+</header>
+<main class="pt-24 px-4 max-w-container-max mx-auto space-y-8">
+<!-- Hero Section / Animated Background -->
+<section class="relative h-48 w-full rounded-xl overflow-hidden glass-panel flex items-end p-6">
+
+<div class="relative z-10">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Inventory Insights</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">4 items require immediate attention.</p>
+</div>
+</section>
+<!-- Inventory List Container -->
+<section class="space-y-4">
+<!-- Header Row -->
+<div class="flex px-4 py-2 font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+<div class="flex-[2]">Item</div>
+<div class="flex-1 hidden md:block">Category</div>
+<div class="flex-1 text-center md:text-left">Quantity</div>
+<div class="flex-1 text-right">Expires</div>
+</div>
+<!-- List Rows -->
+<div class="space-y-2">
+<!-- Row 1 -->
+<div class="flex items-center px-4 py-5 rounded-lg glass-panel row-hover transition-all duration-300">
+<div class="flex-[2] flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-[#EF4444] shadow-[0_0_8px_#EF4444]"></div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface font-semibold">Salmon Fillet</p>
+<p class="md:hidden font-label-caps text-label-caps text-on-surface-variant mt-1">Protein</p>
+</div>
+</div>
+<div class="flex-1 hidden md:block font-body-sm text-body-sm text-on-surface-variant">Protein</div>
+<div class="flex-1 text-center md:text-left font-body-sm text-body-sm text-on-surface">2 units</div>
+<div class="flex-1 text-right">
+<span class="px-2 py-1 rounded bg-[#EF4444]/10 text-[#EF4444] font-label-caps text-[10px]">TODAY</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="flex items-center px-4 py-5 rounded-lg glass-panel row-hover transition-all duration-300">
+<div class="flex-[2] flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-[#F59E0B] shadow-[0_0_8px_#F59E0B]"></div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface font-semibold">Baby Spinach</p>
+<p class="md:hidden font-label-caps text-label-caps text-on-surface-variant mt-1">Greens</p>
+</div>
+</div>
+<div class="flex-1 hidden md:block font-body-sm text-body-sm text-on-surface-variant">Greens</div>
+<div class="flex-1 text-center md:text-left font-body-sm text-body-sm text-on-surface">1 bag</div>
+<div class="flex-1 text-right">
+<span class="px-2 py-1 rounded bg-[#F59E0B]/10 text-[#F59E0B] font-label-caps text-[10px]">TOMORROW</span>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="flex items-center px-4 py-5 rounded-lg glass-panel row-hover transition-all duration-300">
+<div class="flex-[2] flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]"></div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface font-semibold">Greek Yogurt</p>
+<p class="md:hidden font-label-caps text-label-caps text-on-surface-variant mt-1">Dairy</p>
+</div>
+</div>
+<div class="flex-1 hidden md:block font-body-sm text-body-sm text-on-surface-variant">Dairy</div>
+<div class="flex-1 text-center md:text-left font-body-sm text-body-sm text-on-surface">500g</div>
+<div class="flex-1 text-right">
+<span class="px-2 py-1 rounded bg-[#10B981]/10 text-[#10B981] font-label-caps text-[10px]">FRESH</span>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="flex items-center px-4 py-5 rounded-lg glass-panel row-hover transition-all duration-300">
+<div class="flex-[2] flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-[#10B981] shadow-[0_0_8px_#10B981]"></div>
+<div>
+<p class="font-body-lg text-body-lg text-on-surface font-semibold">Avocados</p>
+<p class="md:hidden font-label-caps text-label-caps text-on-surface-variant mt-1">Produce</p>
+</div>
+</div>
+<div class="flex-1 hidden md:block font-body-sm text-body-sm text-on-surface-variant">Produce</div>
+<div class="flex-1 text-center md:text-left font-body-sm text-body-sm text-on-surface">3 units</div>
+<div class="flex-1 text-right">
+<span class="px-2 py-1 rounded bg-[#10B981]/10 text-[#10B981] font-label-caps text-[10px]">FRESH</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Visual Context Bento Section -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4 h-auto md:h-64">
+<div class="md:col-span-2 rounded-xl glass-panel relative overflow-hidden group">
+<img alt="Smart Fridge Interior" class="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-700" data-alt="A highly organized, futuristic smart refrigerator interior. The shelves are lit with a cool, soft cyan glow. Sleek glass containers holding vibrant fresh produce are arranged with mathematical precision. The atmosphere is quiet, premium, and technologically advanced, echoing a high-end command center aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB5PxhwEdaNSL2bxStW2c3ukTQ4wOgbEdmAEzbvPQhfih9MGubSFvNNAKne96dtlMvb6xRFBPce1vwnnNlLswIjlKrSLD4bwN1vZ_19wJ_uKS2ix40JKcH8PEQQ3QZWX_TAUbFrHX7dcCZBgZ9wE1PD8JpX20YitaHqgTqfDDo3w1f9JSaHRISQrTJ0ZUr2Z3bAU24nvrE2PZ0poa3CF1wtav-P0HNl-vqpy8FLzDj-i5A5xMCjMSJucy-BK1H_zT175pd5bKiw5A"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6">
+<h3 class="font-headline-md text-headline-md">Visual Health Map</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Your produce health is at 94% this week.</p>
+</div>
+</div>
+<div class="rounded-xl glass-panel p-6 flex flex-col justify-between border-l-4 border-primary">
+<div class="space-y-2">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+<h3 class="font-headline-md text-headline-md">AI Suggestion</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">You have Salmon and Spinach expiring soon. Try making a 'Pan-Seared Salmon Salad'.</p>
+</div>
+<button class="mt-4 px-4 py-2 bg-on-surface/10 border border-white/10 rounded-lg font-label-caps text-label-caps hover:bg-white/10 transition-colors uppercase">
+                    View Recipe
+                </button>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-16 px-4 pb-safe bg-surface/30 backdrop-blur-xl border-t border-outline-variant/10 z-50">
+<button class="flex flex-col items-center justify-center text-primary font-bold active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-caps text-[10px]">Inventory</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95 transition-transform">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+<span class="font-label-caps text-[10px]">Scanner</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95 transition-transform">
+<span class="material-symbols-outlined">restaurant_menu</span>
+<span class="font-label-caps text-[10px]">Recipes</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface active:scale-95 transition-transform">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-[10px]">Settings</span>
+</button>
+</nav>
+<!-- FAB for adding items -->
+<button class="fixed bottom-20 right-6 w-14 h-14 bg-on-surface text-background rounded-full flex items-center justify-center shadow-xl z-40 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" style="font-size: 28px;">add</span>
+</button>
+<script>
+        // Simple micro-interaction for rows
+        document.querySelectorAll('.row-hover').forEach(row => {
+            row.addEventListener('click', () => {
+                row.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    row.style.transform = 'scale(1)';
+                }, 100);
+            });
+        });
+    </script>
+</body></html>

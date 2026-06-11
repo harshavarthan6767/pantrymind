@@ -322,7 +322,7 @@ Snapshot data:
 
 Keep the tone friendly and the currency in INR (₹)."""
 
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-3.1-pro")
         response = model.generate_content(prompt)
         report = response.text
 
