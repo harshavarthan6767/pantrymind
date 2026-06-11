@@ -7,7 +7,7 @@ PantryMind
 AI-powered multi-agent life management with voice, governance, and real-time inventory intelligence
 
 ## Elevator Pitch
-PantryMind is an intelligent multi-agent system that transforms household management by combining real-time inventory tracking, smart recipe generation, and financial ledger management. Built on Google ADK and powered by the official MongoDB MCP server, it uses specialized AI agents to securely read and write to your database, all while keeping you in control through a strict Human-in-the-Loop approval system for maximum safety and data integrity.
+PantryMind is a multi-agent life manager powered by Google ADK & MongoDB MCP. It handles groceries, meal planning & finances via voice, protected by a Human-in-the-Loop safety system.
 
 ## Description
 PantryMind is an intelligent household management application built to automate receipt scanning, inventory tracking, and meal planning. Instead of relying on a single monolithic LLM, PantryMind uses a **Multi-Agent Architecture** powered by Google ADK (Agent Development Kit), Gemini 2.5 Flash, and the official MongoDB MCP server. It brings together financial tracking, dietary preferences, and pantry management under one natural language interface.
