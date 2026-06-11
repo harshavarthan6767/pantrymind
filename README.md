@@ -9,7 +9,7 @@
   [![Vercel](https://img.shields.io/badge/Deployed-Vercel-black.svg)](https://harshavarthan6767.github.io/pantrymind/)
   [![Gemini](https://img.shields.io/badge/Powered_by-Gemini_3.1_Pro-8A2BE2.svg)](https://deepmind.google/technologies/gemini/)
 
-  [Live UI Demo](https://harshavarthan6767.github.io/pantrymind/) • [Architecture Details](docs/VOICE_AGENT_ARCHITECTURE.md) • [Devpost Submission](DEVPOST_SUBMISSION.md)
+  [Live UI Demo](https://harshavarthan6767.github.io/pantrymind/) • [Architecture Details](docs/VOICE_AGENT_ARCHITECTURE.md) • [Devpost Submission](https://devpost.com/software/pantrymind)
 </div>
 
 <br/>
